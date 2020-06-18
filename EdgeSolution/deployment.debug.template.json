@@ -60,6 +60,16 @@
               "image": "${MODULES.SampleModule.debug}",
               "createOptions": {}
             }
+          },
+          "TemperatureFilter": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.TemperatureFilter.debug}",
+              "createOptions": {}
+            }
           }
         }
       }
@@ -68,7 +78,8 @@
       "properties.desired": {
         "schemaVersion": "1.0",
         "routes": {
-          "SampleModuleToIoTHub": "FROM /messages/modules/SampleModule/outputs/* INTO $upstream"
+          "SampleModuleToIoTHub": "FROM /messages/modules/SampleModule/outputs/* INTO $upstream",
+          "TemperatureFilterToIoTHub": "FROM /messages/modules/TemperatureFilter/outputs/* INTO $upstream"
         },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
