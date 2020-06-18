@@ -27,9 +27,9 @@
             "MetricsCollector": {
                 "properties.desired": {
                     "schemaVersion": "1.0",
-                    "scrapeFrequencySecs": 300,
+                    "scrapeFrequencySecs": __SCRAPE_FREQUENCY__,
                     "metricsFormat": "Json",
-                    "syncTarget": "AzureLogAnalytics",
+                    "syncTarget": "__SYNC_TARGET__",
                     "endpoints": {
                         "edgeHub": "http://edgeHub:9600/metrics"
                     }
