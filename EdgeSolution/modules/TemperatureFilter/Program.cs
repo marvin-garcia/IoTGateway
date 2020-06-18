@@ -80,6 +80,7 @@ namespace TemperatureFilter
 
             if (!string.IsNullOrEmpty(messageString))
             {
+                Console.WriteLine($"Ambient temperature: {messageBody.Ambient.Temperature}. Temperature threshold: {temperatureThreshold}");
                 if (messageBody.Ambient.Temperature <= temperatureThreshold)
                 {
                     Console.WriteLine($"Sending message to hub");
