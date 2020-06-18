@@ -1,0 +1,27 @@
+{
+    "content": {
+        "modulesContent": {
+            "$edgeAgent": {
+                "properties.desired.modules.module": {
+                    "settings": {
+                        "image": "__IMAGE_REPOSITORY__:__IMAGE_TAG__",
+                        "createOptions": ""
+                    },
+                    "type": "docker",
+                    "env": {
+                        "TEMPERATURE_THRESHOLD": {
+                            "value": "_-TEMPERATURE_THRESHOLD__"
+                        }
+                    },
+                    "status": "running",
+                    "restartPolicy": "always",
+                    "version": "1.0"
+                }
+            },
+            "$edgeHub": {
+                "properties.desired.routes.SimulatedTemperatureToTempFilter": "FROM /messages/modules/SimulatedTemperature/outputs/* INTO BrokeredEndpoint(\"/modules/TempFilter/inputs/input1\")",
+                "properties.desired.routes.TempFilterToIoTHub": "FROM /messages/modules/SimulatedTemperature/outputs/* INTO $upstream"
+            }
+        }
+    }
+}
