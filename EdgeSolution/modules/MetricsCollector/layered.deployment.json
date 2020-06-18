@@ -2,9 +2,9 @@
     "content": {
         "modulesContent": {
             "$edgeAgent": {
-                "properties.desired.modules.TempFilter": {
+                "properties.desired.modules.MetricsCollector": {
                     "settings": {
-                        "image": "__IMAGE_REPOSITORY__:__IMAGE_TAG__",
+                        "image": "veyalla/metricscollector:__IMAGE_TAG__",
                         "createOptions": ""
                     },
                     "type": "docker",
@@ -22,7 +22,7 @@
                 }
             },
             "$edgeHub": {
-                "properties.desired.routes.MetricsCollectorToIoTHub": "FROM /messages/modules/metricscollector/* INTO $upstream"
+                "properties.desired.routes.MetricsCollectorToIoTHub": "FROM /messages/modules/MetricsCollector/* INTO $upstream"
             },
             "MetricsCollector": {
                 "properties.desired": {
