@@ -78,9 +78,7 @@
     "$edgeHub": {
       "properties.desired": {
         "schemaVersion": "1.0",
-        "routes": {
-          "SimulatedTemperatureToIoTHub": "FROM /messages/modules/SimulatedTemperature/outputs/* INTO $upstream"
-        },
+        "routes": {},
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
         }
