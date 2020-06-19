@@ -4,7 +4,7 @@
             "$edgeAgent": {
                 "properties.desired.modules.MetricsCollector": {
                     "settings": {
-                        "image": "veyalla/metricscollector:__IMAGE_TAG__",
+                        "image": "__IMAGE_REPOSITORY__:__IMAGE_TAG__",
                         "createOptions": ""
                     },
                     "type": "docker",
@@ -27,9 +27,9 @@
             "MetricsCollector": {
                 "properties.desired": {
                     "schemaVersion": "1.0",
-                    "scrapeFrequencySecs": __SCRAPE_FREQUENCY__,
+                    "scrapeFrequencySecs": 30,
                     "metricsFormat": "Json",
-                    "syncTarget": "__SYNC_TARGET__",
+                    "syncTarget": "AzureLogAnalytics",
                     "endpoints": {
                         "edgeHub": "http://edgeHub:9600/metrics"
                     }
