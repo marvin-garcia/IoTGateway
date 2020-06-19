@@ -29,7 +29,7 @@
                     "schemaVersion": "1.0",
                     "scrapeFrequencySecs": 30,
                     "metricsFormat": "Json",
-                    "syncTarget": "AzureLogAnalytics",
+                    "syncTarget": "IoTHub",
                     "endpoints": {
                         "edgeHub": "http://edgeHub:9600/metrics"
                     }
