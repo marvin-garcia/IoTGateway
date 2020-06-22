@@ -27,7 +27,7 @@
             "MetricsCollector": {
                 "properties.desired": {
                     "schemaVersion": "1.0",
-                    "scrapeFrequencySecs": 30,
+                    "scrapeFrequencySecs": 300,
                     "metricsFormat": "Json",
                     "syncTarget": "IoTHub",
                     "endpoints": {
