@@ -23,31 +23,9 @@
                         }
                     },
                     "type": "docker",
-                    "env": {
-                        "AzMonWorkspaceId": {
-                            "value": "__WORKSPACE_ID__"
-                        },
-                        "AzMonWorkspaceKey": {
-                            "value": "__WORKSPACE_KEY__"
-                        }
-                    },
                     "status": "running",
                     "restartPolicy": "always",
                     "version": "1.0"
-                }
-            },
-            "$edgeHub": {
-                "properties.desired.routes.LogspoutToIoTHub": "FROM /messages/modules/LogsCollector/* INTO $upstream"
-            },
-            "LogsCollector": {
-                "properties.desired": {
-                    "schemaVersion": "1.0",
-                    "scrapeFrequencySecs": 300,
-                    "metricsFormat": "Json",
-                    "syncTarget": "IoTHub",
-                    "endpoints": {
-                        "edgeHub": "http://edgeHub:9600/metrics"
-                    }
                 }
             }
         }
