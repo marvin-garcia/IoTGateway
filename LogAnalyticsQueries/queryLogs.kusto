@@ -1,0 +1,4 @@
+search *
+| where Type == 'container_logs_CL'
+| project TimeGenerated, Level, msg_s, moduleName_s, iothubdeviceid_s, hostname_s, iothubname_s
+| sort by TimeGenerated desc
