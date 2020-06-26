@@ -1,0 +1,52 @@
+{
+    "content": {
+        "modulesContent": {
+            "$edgeAgent": {
+                "properties.desired.modules": {
+                    "discovery": {
+                        "version": "1.0",
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/discovery:latest",
+                            "createOptions": "{\"Hostname\":\"discovery\",\"NetworkingConfig\":{\"EndpointsConfig\":{\"host\":{}}},\"HostConfig\":{\"NetworkMode\":\"host\",\"CapAdd\":[\"NET_ADMIN\"]}}"
+                        }
+                    },
+                    "opctwin": {
+                        "version": "1.0",
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/opc-twin:latest"
+                        }
+                    },
+                    "opcpublisher": {
+                        "version": "1.0",
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "settings": {
+                            "image": "mcr.microsoft.com/iotedge/opc-publisher:latest"
+                        }
+                    }
+                }
+            }
+        },
+        "$edgeHub": {
+            "properties.desired": {
+                "schemaVersion": "1.0",
+                "routes": {
+                    "opctwinToIoTHub": "FROM /messages/modules/opctwin/* INTO $upstream",
+                    "discoveryToIoTHub": "FROM /messages/modules/discovery/* INTO $upstream",
+                    "opcpublisherToIoTHub": "FROM /messages/modules/opcpublisher/* INTO $upstream"
+                },
+                "storeAndForwardConfiguration": {
+                    "timeToLiveSecs": 7200
+                }
+            }
+        }
+    }
+}
+}
