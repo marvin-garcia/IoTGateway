@@ -1,51 +1,67 @@
 {
-    "content": {
-        "modulesContent": {
-            "$edgeAgent": {
-                "properties.desired.modules": {
-                    "discovery": {
-                        "version": "1.0",
-                        "type": "docker",
-                        "status": "running",
-                        "restartPolicy": "always",
-                        "settings": {
-                            "image": "mcr.microsoft.com/iotedge/discovery:latest",
-                            "createOptions": "{\"Hostname\":\"discovery\",\"NetworkingConfig\":{\"EndpointsConfig\":{\"host\":{}}},\"HostConfig\":{\"NetworkMode\":\"host\",\"CapAdd\":[\"NET_ADMIN\"]}}"
-                        }
-                    },
-                    "opctwin": {
-                        "version": "1.0",
-                        "type": "docker",
-                        "status": "running",
-                        "restartPolicy": "always",
-                        "settings": {
-                            "image": "mcr.microsoft.com/iotedge/opc-twin:latest"
-                        }
-                    },
-                    "opcpublisher": {
-                        "version": "1.0",
-                        "type": "docker",
-                        "status": "running",
-                        "restartPolicy": "always",
-                        "settings": {
-                            "image": "mcr.microsoft.com/iotedge/opc-publisher:latest"
-                        }
-                    }
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules": {
+          "opcPublisher": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
+              "createOptions": {
+                "Cmd": [
+                  "--pf=/data/publishedNodes.json",
+                  "--aa"
+                ],
+                "HostConfig": {
+                  "Binds": [
+                    "/opc:/data"
+                  ]
                 }
+              }
             }
-        },
-        "$edgeHub": {
-            "properties.desired": {
-                "schemaVersion": "1.0",
-                "routes": {
-                    "opctwinToIoTHub": "FROM /messages/modules/opctwin/* INTO $upstream",
-                    "discoveryToIoTHub": "FROM /messages/modules/discovery/* INTO $upstream",
-                    "opcpublisherToIoTHub": "FROM /messages/modules/opcpublisher/* INTO $upstream"
-                },
-                "storeAndForwardConfiguration": {
-                    "timeToLiveSecs": 7200
+          },
+          "opcToDtdl": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "azureiotgbb/opc-publisher-to-dtdl:latest",
+              "createOptions": {
+                "Env": [
+                  "DefaultApplicationUri=Site01",
+                  "NodeIdRegex=#s=\\([a-zA-Z0-9_\\.]+\\)",
+                  "ApplicationUriRegex=Site01"
+                ],
+                "HostConfig": {
+                  "PortBindings": {
+                    "8086/tcp": [
+                      {
+                        "HostPort": "8086"
+                      }
+                    ]
+                  }
                 }
+              }
             }
+          }
         }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "routes": {
+          "opcPublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"/modules/opcToDtdl/inputs/opc\")",
+          "translatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
     }
+  }
 }
