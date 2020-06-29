@@ -23,24 +23,19 @@
               }
             }
           },
-          "opcToDtdl": {
+          "opcSimulator": {
             "version": "1.0",
             "type": "docker",
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "azureiotgbb/opc-publisher-to-dtdl:latest",
+              "image": "iotgwcr.azurecr.io/opcsimulator:latest",
               "createOptions": {
-                "Env": [
-                  "DefaultApplicationUri=Site01",
-                  "NodeIdRegex=#s=\\([a-zA-Z0-9_\\.]+\\)",
-                  "ApplicationUriRegex=Site01"
-                ],
                 "HostConfig": {
                   "PortBindings": {
-                    "8086/tcp": [
+                    "1880/tcp": [
                       {
-                        "HostPort": "8086"
+                        "HostPort": "1880"
                       }
                     ]
                   }
@@ -55,11 +50,7 @@
       "properties.desired": {
         "schemaVersion": "1.0",
         "routes": {
-          "opcPublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"/modules/opcToDtdl/inputs/opc\")",
-          "translatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
-        },
-        "storeAndForwardConfiguration": {
-          "timeToLiveSecs": 7200
+          "opcPublisherToIoTHub": "FROM /messages/modules/opcPublisher/* INTO $upstream"
         }
       }
     }
