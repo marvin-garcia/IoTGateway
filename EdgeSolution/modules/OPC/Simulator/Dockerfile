@@ -1,16 +1,6 @@
-# Start with upstream node-red
-FROM nodered/node-red
+FROM nodered/node-red:latest
 
-# Copy package.json to the WORKDIR so npm builds all
-# of your added modules for Node-RED
-RUN npm install node-red-contrib-opcua-server
+RUN npm install --save node-red-contrib-opcua-server
 
-# Copy Node-RED project files into place
-COPY settings.js ./settings.js
-COPY flows_cred.json ./flows_cred.json
-COPY flows.json ./flows.json
+COPY flows.json /data/
 
-EXPOSE 1880/tcp
-
-# Start the container normally
-CMD ["npm", "start"]

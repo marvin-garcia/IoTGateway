@@ -3,24 +3,24 @@
     "modulesContent": {
       "$edgeAgent": {
         "properties.desired.modules": {
-          "opcPublisher": {
-            "version": "1.0",
-            "type": "docker",
-            "status": "running",
-            "restartPolicy": "always",
-            "settings": {
-              "image": "iotgwcr.azurecr.io/opcpublisher:latest",
-              "createOptions": "{\"Hostname\":\"publisher\",\"Cmd\":[\"--pf=/app/pn.json\",\"--aa\"]}"
-            }
-          },
           "opcSimulator": {
             "version": "1.0",
             "type": "docker",
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "iotgwcr.azurecr.io/opcsimulator:latest",
-              "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"1880/tcp\":[{\"HostPort\":\"1880\"}]}}}"
+              "image": "iotgwcr.azurecr.io/opcsimulator:1",
+              "createOptions": "{\"ExposedPorts\":{\"4840/tcp\":{}},\"HostConfig\":{\"PortBindings\":{\"1880/tcp\":[{\"HostPort\":\"1880\"}],\"4840/tcp\":[{\"HostPort\":\"4840\"}]}}}"
+            }
+          },
+          "opcPublisher": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "iotgwcr.azurecr.io/opcpublisher:3",
+              "createOptions": "{\"Cmd\":[\"--pf=/data/publishedNodes.json\",\"--aa\"]}"
             }
           },
           "opcToDtdl": {
@@ -28,15 +28,14 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "azureiotgbb/opc-publisher-to-dtdl:latest",
-              "createOptions": "{\"Env\":[\"DefaultApplicationUri=Site1\",\"NodeIdRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=Site1\"]}"
+              "image": "iotgwcr.azurecr.io/opctodtdl:1",
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=Site01\",\"NodeIdRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=Site01\"]}"
             }
           }
         }
       },
       "$edgeHub": {
         "properties.desired.routes": {
-          "OpcPublisherToIoTHub": "FROM /messages/modules/opcPublisher/* INTO $upstream)",
           "OpcPublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"/modules/opcToDtdl/inputs/opc\")",
           "TranslatorToIoTHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
         }
