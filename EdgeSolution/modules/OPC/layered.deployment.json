@@ -9,18 +9,8 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
-              "createOptions": {
-                "Cmd": [
-                  "--pf=/data/publishedNodes.json",
-                  "--aa"
-                ],
-                "HostConfig": {
-                  "Binds": [
-                    "/opc:/data"
-                  ]
-                }
-              }
+              "image": "iotgwcr.azurecr.io/opcpublisher:latest",
+              "createOptions": "{\"Hostname\":\"publisher\",\"Cmd\":[\"--pf=/app/pn.json\",\"--aa\"]}"
             }
           },
           "opcSimulator": {
@@ -30,27 +20,25 @@
             "restartPolicy": "always",
             "settings": {
               "image": "iotgwcr.azurecr.io/opcsimulator:latest",
-              "createOptions": {
-                "HostConfig": {
-                  "PortBindings": {
-                    "1880/tcp": [
-                      {
-                        "HostPort": "1880"
-                      }
-                    ]
-                  }
-                }
-              }
+              "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"1880/tcp\":[{\"HostPort\":\"1880\"}]}}}"
+            }
+          },
+          "opcToDtdl": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "azureiotgbb/opc-publisher-to-dtdl:latest",
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=Site1\",\"NodeIdRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=Site1\"]}"
             }
           }
         }
-      }
-    },
-    "$edgeHub": {
-      "properties.desired": {
-        "schemaVersion": "1.0",
-        "routes": {
-          "opcPublisherToIoTHub": "FROM /messages/modules/opcPublisher/* INTO $upstream"
+      },
+      "$edgeHub": {
+        "properties.desired.routes": {
+          "OpcPublisherToIoTHub": "FROM /messages/modules/opcPublisher/* INTO $upstream)",
+          "OpcPublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"/modules/opcToDtdl/inputs/opc\")",
+          "TranslatorToIoTHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
         }
       }
     }
