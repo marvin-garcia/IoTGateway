@@ -29,10 +29,14 @@
     "OpcNodes": [
       {
         "Id": "ns=3;s=Pressure",
+        "OpcSamplingInterval": 1000,
+        "OpcPublishingInterval": 5000,
         "DisplayName": "Pressure"
       },
       {
         "Id": "ns=3;s=Temperature",
+        "OpcSamplingInterval": 1000,
+        "OpcPublishingInterval": 5000,
         "DisplayName": "Temperature"
       }
     ]
