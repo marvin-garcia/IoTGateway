@@ -22,5 +22,19 @@
               "DisplayName": "ITEM_COUNT_BAD"
           }
       ]
+  },
+  {
+    "EndpointUrl": "opc.tcp://10.3.0.5:53530/OPCUA/SimulationServer",
+    "UseSecurity": false,
+    "OpcNodes": [
+      {
+        "Id": "ns=3;s=Pressure",
+        "DisplayName": "Pressure"
+      },
+      {
+        "Id": "ns=3;s=Temperature",
+        "DisplayName": "Temperature"
+      }
+    ]
   }
 ]
