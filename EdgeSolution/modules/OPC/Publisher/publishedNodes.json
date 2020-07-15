@@ -1,42 +1,14 @@
 [
   {
-      "EndpointUrl": "opc.tcp://opcSimulator:4840/OPCUA/Site1",
-      "UseSecurity": false,
-      "OpcNodes": [
-          {
-              "Id": "ns=1;s=STATUS",
-              "OpcSamplingInterval": 1000,
-              "OpcPublishingInterval": 5000,
-              "DisplayName": "STATUS"
-          },
-          {
-              "Id": "ns=1;s=ITEM_COUNT_GOOD",
-              "OpcSamplingInterval": 1000,
-              "OpcPublishingInterval": 5000,
-              "DisplayName": "ITEM_COUNT_GOOD"
-          },
-          {
-              "Id": "ns=1;s=ITEM_COUNT_BAD",
-              "OpcSamplingInterval": 1000,
-              "OpcPublishingInterval": 5000,
-              "DisplayName": "ITEM_COUNT_BAD"
-          }
-      ]
-  },
-  {
     "EndpointUrl": "opc.tcp://10.3.0.5:53530/OPCUA/SimulationServer",
     "UseSecurity": false,
     "OpcNodes": [
       {
         "Id": "ns=3;s=Pressure",
-        "OpcSamplingInterval": 1000,
-        "OpcPublishingInterval": 5000,
-        "DisplayName": "Pressure"
+        "DisplayName": "Temperature"
       },
       {
         "Id": "ns=3;s=Temperature",
-        "OpcSamplingInterval": 1000,
-        "OpcPublishingInterval": 5000,
         "DisplayName": "Temperature"
       }
     ]
