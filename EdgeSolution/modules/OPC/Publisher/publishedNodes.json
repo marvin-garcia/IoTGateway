@@ -4,12 +4,10 @@
     "UseSecurity": false,
     "OpcNodes": [
       {
-        "Id": "ns=3;s=Pressure",
-        "DisplayName": "Temperature"
+        "Id": "ns=5;s=Pressure"
       },
       {
-        "Id": "ns=3;s=Temperature",
-        "DisplayName": "Temperature"
+        "Id": "ns=5;s=Temperature"
       }
     ]
   }
