@@ -29,7 +29,7 @@
             "restartPolicy": "always",
             "settings": {
               "image": "__LOGIN_SERVER__/__TRANSLATOR_IMAGE_NAME__:__TRANSLATOR_IMAGE_TAG__",
-              "createOptions": "{\"Env\":[\"DefaultApplicationUri=SimulationServer\",\"NodeIdRegex=#[is]=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=.*\"]}"
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=SimulationServer\",\"NodeIdRegex=#[is]=([a-zA-Z0-9_.]+)\",\"ApplicationUriRegex=(.*)\"]}"
             }
           }
         }
