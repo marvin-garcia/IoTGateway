@@ -51,13 +51,13 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
             var opcMessages = new OpcMessage[] { };
             try
             {
-                opcMessages = JsonConvert.DeserializeObject<OpcMessage[]>(JsonConvert.SerializeObject(messageBytes));
+                opcMessages = JsonConvert.DeserializeObject<OpcMessage[]>(Encoding.UTF8.GetString(messageBytes));
             }
             catch (Exception e)
             {
                 logger.LogInformation($"Failed to deserialize opc message as an array. Exception: {e}");
                 logger.LogInformation($"Attempting single instance deserialization");
-                opcMessages[0] = JsonConvert.DeserializeObject<OpcMessage>(JsonConvert.SerializeObject(messageBytes));
+                opcMessages[0] = JsonConvert.DeserializeObject<OpcMessage>(Encoding.UTF8.GetString(messageBytes));
             }
 
             var dtdlMessages = BuildDtdlMessage(opcMessages);
