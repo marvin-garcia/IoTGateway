@@ -29,14 +29,13 @@
             "restartPolicy": "always",
             "settings": {
               "image": "__LOGIN_SERVER__/__TRANSLATOR_IMAGE_NAME__:__TRANSLATOR_IMAGE_TAG__",
-              "createOptions": "{\"Env\":[\"DefaultApplicationUri=Site01\",\"NodeIdRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\"]}"
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=SimulationServer\",\"NodeIdRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\",\"ApplicationUriRegex=#s=\\\\([a-zA-Z0-9_\\\\.]+\\\\)\"]}"
             }
           }
         }
       },
       "$edgeHub": {
         "properties.desired.routes": {
-          "OpcPublisherToIoTHub": "FROM /messages/modules/opcPublisher/* INTO $upstream",
           "OpcPublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"/modules/opcToDtdl/inputs/opc\")",
           "TranslatorToIoTHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
         }
