@@ -8,12 +8,16 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Contracts
     ///  Represents an OPC-UA Json Message
     /// </summary>
     internal class OpcMessage {
+        [JsonProperty("NodeId")]
         public string NodeId  { get; set; }
+        [JsonProperty("ApplicationUri")]
         public string ApplicationUri { get; set; }
+        [JsonProperty("DisplayName")]
         public string DisplayName { get; set; }
         [DefaultValue("OK")]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonProperty("Status", DefaultValueHandling = DefaultValueHandling.Populate)]
         public string Status { get; set; }
+        [JsonProperty("Value")]
         public OpcMessageValue Value { get; set; }
     }
 }

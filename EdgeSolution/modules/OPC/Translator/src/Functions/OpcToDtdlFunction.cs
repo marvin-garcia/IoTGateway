@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using System.Linq;
 using System;
+using Newtonsoft.Json;
 
 namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
 {
@@ -129,6 +130,7 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
                 dict.Add(opcMessage.DisplayName, opcMessage.Value.Value);
 
                 dtdlMessages[i] = dtdlMessage;
+                Console.WriteLine($"Dtdl message: {JsonConvert.SerializeObject(dtdlMessage)}");
             }
 
             return dtdlMessages;

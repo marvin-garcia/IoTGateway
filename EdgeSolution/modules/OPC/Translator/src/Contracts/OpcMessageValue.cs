@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Contracts
 {
@@ -6,8 +7,9 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Contracts
     ///  Represents an OPC-UA Json Message Value field
     /// </summary>
     internal class OpcMessageValue {
+        [JsonProperty("Value")]
         public double Value { get; set; }
-
+        [JsonProperty("SourceTimestamp")]
         public DateTime SourceTimestamp { get; set; }
     }
 }
