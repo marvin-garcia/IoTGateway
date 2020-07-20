@@ -4,10 +4,25 @@
     "UseSecurity": false,
     "OpcNodes": [
       {
-        "Id": "ns=5;s=Pressure"
+        "Id": "ns=3;s=Pressure"
       },
       {
-        "Id": "ns=5;s=Temperature"
+        "Id": "ns=3;s=Temperature"
+      },
+      {
+        "Id": "ns=3;s=Random"
+      },
+      {
+        "Id": "ns=3;s=Sawtooth"
+      },
+      {
+        "Id": "ns=3;s=Sinusoid"
+      },
+      {
+        "Id": "ns=3;s=Square"
+      },
+      {
+        "Id": "ns=3;s=Triangle"
       }
     ]
   }
