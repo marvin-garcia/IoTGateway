@@ -113,6 +113,7 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
                 dynamic dtdlMessage = new ExpandoObject();
                 var dict = (IDictionary<string, object>)dtdlMessage;
 
+                Console.WriteLine($"OPC message: {JsonConvert.SerializeObject(opcMessage)}");
                 dict.Add("NodeId", ParseNodeId(opcMessage.NodeId));
 
                 if (string.IsNullOrEmpty(opcMessage.ApplicationUri))
