@@ -1,5 +1,4 @@
 using Microsoft.Azure.WebJobs;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.WebJobs.Extensions.EdgeHub;
 using Microsoft.Azure.Devices.Client;
@@ -52,20 +51,20 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
             var opcMessages = new OpcMessage[] { };
             try
             {
-                opcMessages = JsonSerializer.Deserialize<OpcMessage[]>(messageBytes);
+                opcMessages = JsonConvert.DeserializeObject<OpcMessage[]>(JsonConvert.SerializeObject(messageBytes));
             }
             catch (Exception e)
             {
                 logger.LogInformation($"Failed to deserialize opc message as an array. Exception: {e}");
                 logger.LogInformation($"Attempting single instance deserialization");
-                opcMessages[0] = JsonSerializer.Deserialize<OpcMessage>(messageBytes);
+                opcMessages[0] = JsonConvert.DeserializeObject<OpcMessage>(JsonConvert.SerializeObject(messageBytes));
             }
 
             var dtdlMessages = BuildDtdlMessage(opcMessages);
 
             for (int i = 0; i < dtdlMessages.Length; i++)
             {
-                var messageString = JsonSerializer.Serialize(dtdlMessages[i]);
+                var messageString = JsonConvert.SerializeObject(dtdlMessages[i]);
                 var outputMessageString = Encoding.UTF8.GetBytes(messageString);
 
                 var outputMessage = new Message(outputMessageString);
