@@ -142,6 +142,7 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
         /// <param name="opcNodeId">The NodeId to parse</param>
         private string ParseNodeId(string opcNodeId)
         {
+            Console.WriteLine($"Node Id Regex: {_Options.NodeIdRegex}. String: {opcNodeId}");
             Regex rgx = new Regex(_Options.NodeIdRegex);
             var match = rgx.Match(opcNodeId);
 
@@ -154,6 +155,7 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
         /// <param name="opcApplicationUri">The ApplicationUri to parse</param>
         private string ParseApplicationUri(string opcApplicationUri)
         {
+            Console.WriteLine($"App Uri Regex: {_Options.ApplicationUriRegex}. String: {opcApplicationUri}");
             Regex rgx = new Regex(_Options.ApplicationUriRegex);
             var match = rgx.Match(opcApplicationUri);
 
