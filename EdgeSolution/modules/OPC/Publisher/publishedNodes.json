@@ -4,25 +4,32 @@
     "UseSecurity": false,
     "OpcNodes": [
       {
-        "Id": "ns=3;s=Pressure"
+        "Id": "ns=3;i=1002",
+        "DisplayName": "Random"
       },
       {
-        "Id": "ns=3;s=Temperature"
+        "Id": "ns=3;i=1003",
+        "DisplayName": "Sawtooth"
       },
       {
-        "Id": "ns=3;s=Random"
+        "Id": "ns=3;i=1004",
+        "DisplayName": "Sinusoid"
       },
       {
-        "Id": "ns=3;s=Sawtooth"
+        "Id": "ns=3;i=1005",
+        "DisplayName": "Square"
       },
       {
-        "Id": "ns=3;s=Sinusoid"
+        "Id": "ns=3;i=1006",
+        "DisplayName": "Triangle"
       },
       {
-        "Id": "ns=3;s=Square"
+        "Id": "ns=3;i=1007",
+        "DisplayName": "Pressure"
       },
       {
-        "Id": "ns=3;s=Triangle"
+        "Id": "ns=3;i=1008",
+        "DisplayName": "Temperature"
       }
     ]
   }
