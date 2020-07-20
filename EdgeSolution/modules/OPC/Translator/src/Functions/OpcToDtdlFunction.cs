@@ -113,7 +113,6 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
                 dynamic dtdlMessage = new ExpandoObject();
                 var dict = (IDictionary<string, object>)dtdlMessage;
 
-                Console.WriteLine($"OPC message: {JsonConvert.SerializeObject(opcMessage)}");
                 dict.Add("NodeId", ParseNodeId(opcMessage.NodeId));
 
                 if (string.IsNullOrEmpty(opcMessage.ApplicationUri))
@@ -130,7 +129,6 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
                 dict.Add(opcMessage.DisplayName, opcMessage.Value.Value);
 
                 dtdlMessages[i] = dtdlMessage;
-                Console.WriteLine($"Dtdl message: {JsonConvert.SerializeObject(dtdlMessage)}");
             }
 
             return dtdlMessages;
@@ -142,7 +140,6 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
         /// <param name="opcNodeId">The NodeId to parse</param>
         private string ParseNodeId(string opcNodeId)
         {
-            Console.WriteLine($"Node Id Regex: {_Options.NodeIdRegex}. String: {opcNodeId}");
             Regex rgx = new Regex(_Options.NodeIdRegex);
             var match = rgx.Match(opcNodeId);
 
@@ -155,7 +152,6 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Functions
         /// <param name="opcApplicationUri">The ApplicationUri to parse</param>
         private string ParseApplicationUri(string opcApplicationUri)
         {
-            Console.WriteLine($"App Uri Regex: {_Options.ApplicationUriRegex}. String: {opcApplicationUri}");
             Regex rgx = new Regex(_Options.ApplicationUriRegex);
             var match = rgx.Match(opcApplicationUri);
 
