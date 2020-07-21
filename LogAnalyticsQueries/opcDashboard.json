@@ -1,0 +1,201 @@
+{
+  "isDashboardEditor": true,
+  "updatedTimestamp": "2020-07-21T03:35:11.1544467Z",
+  "id": "37c2b7c2-fc72-477f-9b70-cf385e9dd5aa",
+  "title": "OPC Dashboard",
+  "eTag": "\"9200e7bf-0000-0700-0000-5f1714b60000\"",
+  "pinnedParameters": [
+    "c44c808f-5221-421b-bde7-271def9710f4",
+    "39d5c845-c299-4461-be64-188e1838af8b"
+  ],
+  "parameters": [
+    {
+      "type": "duration",
+      "id": "c44c808f-5221-421b-bde7-271def9710f4",
+      "displayName": "Time range",
+      "beginVariableName": "_startTime",
+      "endVariableName": "_endTime",
+      "defaultValue": {
+        "values": [
+          {
+            "value": {
+              "type": "dynamic",
+              "range": {
+                "count": 1,
+                "unit": "hours"
+              }
+            }
+          }
+        ],
+        "selectAll": "none"
+      },
+      "$schema": "1.1"
+    },
+    {
+      "id": "39d5c845-c299-4461-be64-188e1838af8b",
+      "type": "string",
+      "displayName": "Forecast Horizon",
+      "defaultValue": {
+        "values": [
+          {
+            "value": "1h"
+          }
+        ],
+        "selectAll": "none"
+      },
+      "selectionType": "single",
+      "dataSource": {
+        "type": "static",
+        "options": [
+          {
+            "value": "1h"
+          },
+          {
+            "value": "2h"
+          },
+          {
+            "value": "4h"
+          },
+          {
+            "value": "8h"
+          },
+          {
+            "value": "1d"
+          }
+        ]
+      },
+      "variableName": "_forecasthorizon",
+      "$schema": "1.1"
+    }
+  ],
+  "tiles": [
+    {
+      "id": "d95acc74-bfd3-40c0-ad5b-2e6b9ecf6c3f",
+      "title": "Temperature Summary",
+      "query": "OPCTelemetry\n| where SourceTimestamp > _startTime and SourceTimestamp < _endTime and isnotnull(Temperature)\n| summarize avg(Temperature), percentiles(Temperature, 50, 95) by bin(SourceTimestamp, 1m)",
+      "dataSourceId": "2003214e-060e-416a-aa7a-58b103bb38dd",
+      "visualType": "line",
+      "activeParameters": [
+        "_startTime",
+        "_endTime"
+      ],
+      "h": 7,
+      "w": 9,
+      "x": 0,
+      "y": 0,
+      "hideLegend": false,
+      "xColumn": {
+        "type": "infer"
+      },
+      "xColumnTitle": "Source Time",
+      "yColumns": {
+        "type": "infer"
+      },
+      "yColumnTitle": "Random",
+      "drilldown": "",
+      "targetParam": "",
+      "yAxisMaximumValue": {
+        "type": "infer"
+      },
+      "yAxisMinimumValue": {
+        "type": "infer"
+      },
+      "$schema": "0"
+    },
+    {
+      "id": "26012d9e-9d11-48bf-95d6-921a0a0990cc",
+      "title": "Temperature Anomaly Detection",
+      "query": "let min_t = _startTime;\nlet max_t = _endTime;\nlet dt = 15m;\nOPCTelemetry\n| where isnotnull(Temperature)\n| make-series temperature=avg(Temperature) on SourceTimestamp from min_t to max_t step dt\n| extend (anomalies, score, baseline) = series_decompose_anomalies(temperature, 1.5, -1, 'linefit')\n| render anomalychart",
+      "dataSourceId": "2003214e-060e-416a-aa7a-58b103bb38dd",
+      "visualType": "timechart",
+      "activeParameters": [
+        "_startTime",
+        "_endTime"
+      ],
+      "h": 7,
+      "w": 9,
+      "x": 0,
+      "y": 7,
+      "hideLegend": false,
+      "xColumn": {
+        "type": "infer"
+      },
+      "xColumnTitle": "Source Time",
+      "yColumns": {
+        "type": "infer"
+      },
+      "yColumnTitle": "",
+      "drilldown": "",
+      "targetParam": "",
+      "yAxisMaximumValue": {
+        "type": "infer"
+      },
+      "yAxisMinimumValue": {
+        "type": "infer"
+      },
+      "$schema": "0"
+    },
+    {
+      "id": "cce79071-6544-4d5e-8d32-d9ca29c27365",
+      "title": "Temperature Forecast",
+      "query": "let min_t = _startTime;\nlet max_t = _endTime;\nlet dt = 15m;\nlet horizon=timespan('1h');\nOPCTelemetry\n| where isnotnull(Temperature)\n| make-series temperature=avg(Temperature) on SourceTimestamp from min_t to max_t+horizon step dt\n| extend forecast = series_decompose_forecast(temperature, toint(horizon/dt))\n| render timechart",
+      "dataSourceId": "2003214e-060e-416a-aa7a-58b103bb38dd",
+      "visualType": "timechart",
+      "activeParameters": [
+        "_startTime",
+        "_endTime"
+      ],
+      "h": 7,
+      "w": 9,
+      "x": 9,
+      "y": 7,
+      "drilldown": "",
+      "targetParam": "",
+      "hideLegend": false,
+      "xColumn": {
+        "type": "infer"
+      },
+      "xColumnTitle": "",
+      "yColumns": {
+        "type": "infer"
+      },
+      "yColumnTitle": "",
+      "yAxisMaximumValue": {
+        "type": "infer"
+      },
+      "yAxisMinimumValue": {
+        "type": "infer"
+      },
+      "$schema": "0"
+    },
+    {
+      "id": "843c17d8-f020-4449-b45c-900c4b2a28a8",
+      "title": "Temperature Summary by Hour",
+      "query": "OPCTelemetry\n| where isnotnull(Temperature)\n| where SourceTimestamp > _startTime and SourceTimestamp < _endTime\n| summarize avg=avg(Temperature), min=min(Temperature), max=max(Temperature) by bin(SourceTimestamp, 1h)\n| take 10",
+      "dataSourceId": "2003214e-060e-416a-aa7a-58b103bb38dd",
+      "visualType": "table",
+      "activeParameters": [
+        "_startTime",
+        "_endTime"
+      ],
+      "h": 7,
+      "w": 9,
+      "x": 9,
+      "y": 0,
+      "drilldown": "",
+      "targetParam": "",
+      "$schema": "0"
+    }
+  ],
+  "dataSources": [
+    {
+      "id": "2003214e-060e-416a-aa7a-58b103bb38dd",
+      "databaseType": "kusto",
+      "title": "TelemetryDB",
+      "connectionString": "https://iotgatewaydataexplorer.centralus.kusto.windows.net/",
+      "database": "TelemetryDB",
+      "$schema": "0"
+    }
+  ],
+  "$schema": "1.2"
+}
