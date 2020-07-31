@@ -1,0 +1,10 @@
+{
+  "id": "89b62099-f6f2-4831-94ae-18ef4ec1a228",
+  "name": "Delivery Routes",
+  "source": {
+    "instanceFieldNames": [
+      "Route Name",
+      "ParcelD"
+    ]
+  }
+}
