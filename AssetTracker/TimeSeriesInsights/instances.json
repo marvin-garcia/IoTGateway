@@ -1,0 +1,22 @@
+{
+  "timeSeriesId": [
+    "plug-n-play-001"
+  ],
+  "typeName": "Asset Tracker",
+  "name": "",
+  "description": "",
+  "hierarchyIds": [
+    "89b62099-f6f2-4831-94ae-18ef4ec1a228"
+  ],
+  "hierarchyNames": [
+    "Delivery Routes"
+  ],
+  "highlightedTimeSeriesId": [
+    "plug-n-play-001"
+  ],
+  "timeSeriesIdKey": "plug-n-play-001",
+  "instanceFields": {
+    "Route Name": "DFW",
+    "ParcelD": "1680145"
+  }
+}
