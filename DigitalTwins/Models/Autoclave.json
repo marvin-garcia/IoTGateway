@@ -1,0 +1,29 @@
+[
+  {
+    "@id": "dtmi:com:Autoclave;1",
+    "@type": "Interface",
+    "@context": "dtmi:dtdl:context;2",
+    "displayName": "Autoclave",
+    "contents": [
+      {
+        "@type": "Property",
+        "name": "data",
+        "schema": "string"
+      },
+      {
+        "@type": "Telemetry",
+        "name": "Temperature",
+        "schema": "double"
+      },
+      {
+        "@type": "Telemetry",
+        "name": "Pressure",
+        "schema": "double"
+      },
+      {
+        "@type": "Relationship",
+        "name": "contains"
+      }
+    ]
+  }
+]

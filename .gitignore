@@ -351,3 +351,4 @@ MigrationBackup/
 
 **/.vscode
 **/module.json
+DigitalTwins/appsettings.dev.json
