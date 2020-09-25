@@ -1,0 +1,189 @@
+{
+  "id": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+  "name": "Asset Tracker",
+  "description": "Asset tracker equipped with various sensors",
+  "variables": {
+    "EventCount": {
+      "kind": "aggregate",
+      "aggregation": {
+        "tsx": "count()"
+      }
+    },
+    "Humidity": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.humidity.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Temperature": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.temperature.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Pressure": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.pressure.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Magnetometer (x)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.magnetometer.x.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Magnetometer (y)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.magnetometer.y.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Magnetometer (z)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.magnetometer.z.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Gyroscope (x)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.gyroscope.x.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Gyroscope (y)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.gyroscope.y.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Gyroscope (z)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.gyroscope.z.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Accelerometer (x)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.accelerometer.x.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Accelerometer (y)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.accelerometer.y.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Accelerometer (z)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.accelerometer.z.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Location (latitutde)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.location.lat.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Location (longitude)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.location.lon.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Location (altitude)": {
+      "kind": "numeric",
+      "value": {
+        "tsx": "$event.location.alt.Double"
+      },
+      "aggregation": {
+        "tsx": "avg($value)"
+      }
+    },
+    "Temperature condition": {
+      "kind": "categorical",
+      "value": {
+        "tsx": "$event.temperature_anomaly.Long"
+      },
+      "filter": {
+        "tsx": "($event.temperature_anomaly.Long) != null"
+      },
+      "interpolation": {
+        "kind": "step",
+        "boundary": {
+          "span": "PT5M"
+        }
+      },
+      "categories": [
+        {
+          "label": "OK",
+          "values": [
+            0
+          ],
+          "annotations": {
+            "color": "#258225"
+          }
+        },
+        {
+          "label": "NO OK",
+          "values": [
+            1
+          ],
+          "annotations": {
+            "color": "#FF2828"
+          }
+        }
+      ],
+      "defaultCategory": {
+        "label": "Unknown",
+        "annotations": {
+          "color": "rgb(199, 179, 237)"
+        }
+      }
+    }
+  }
+}
