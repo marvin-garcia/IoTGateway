@@ -1,0 +1,35 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules": {
+          "opcPlc": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/iotedge/opc-plc:latest",
+              "createOptions": "{\"Hostname\":\"opcPlc\",\"Cmd\":[\"--pn=50000\",\"--autoaccept\"],\"HostConfig\":{\"PortBindings\":{\"50000/tcp\":[{\"HostPort\":\"50000\"}],\"8080/tcp\":[{\"HostPort\":\"8080\"}]}}}"
+            }
+          },
+          "opcPublisher": {
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+                "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
+                "createOptions": "{\"Hostname\":\"opcPublisher\",\"Cmd\":[\"publisher\",\"--aa\",\"--pf=/appdata/publishednodes.json\"],\"HostConfig\":{\"PortBindings\":{\"9080/tcp\":[{\"HostPort\":\"9080\"}]},\"Binds\":[\"/appdata:/appdata\"]}}"
+            }
+          }
+        }
+      },
+      "$edgeHub": {
+        "properties.desired.routes": {
+          "OpcPlcToHub": "FROM /messages/modules/opcPublisher/* INTO $upstream"
+        }
+      }
+    }
+  }
+}

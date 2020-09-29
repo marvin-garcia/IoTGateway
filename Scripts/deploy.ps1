@@ -103,6 +103,10 @@ function New-IIoTEnvironment(
         --command-id runshellscript `
         --script "/etc/iotedge/configedge.sh '$device_connection_string'"
 
+    # set edge device twin tag
+    $device_tags = '{ "environment": "dev" }'
+    az iot hub device-twin update --hub-name $iot_hub_name --device-id $edge_device_id --set tags=$device_tags
+
     # create built-in events route
     az iot hub route create `
         --resource-group $resource_group `
@@ -111,6 +115,12 @@ function New-IIoTEnvironment(
         --name "built-in-events-route" `
         --source devicemessages `
         --condition true
+    
+    # Create OPC layered deployment
+    $deployment_name = "opc"
+    $deployment_condition = "tags.environment='dev'"
+    az iot edge deployment create --layered -d $deployment_name --hub-name $iot_hub_name --content ../EdgeSolution/modules/OPC/Plc/layered.deployment.json --target-condition=$deployment_condition
+
     #endregion
 
     Write-Host ""
