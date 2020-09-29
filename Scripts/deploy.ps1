@@ -116,10 +116,30 @@ function New-IIoTEnvironment(
         --source devicemessages `
         --condition true
     
-    # Create OPC layered deployment
-    $deployment_name = "opc"
+    # Create main deployment
     $deployment_condition = "tags.environment='dev'"
-    az iot edge deployment create --layered -d $deployment_name --hub-name $iot_hub_name --content ../EdgeSolution/modules/OPC/Plc/layered.deployment.json --target-condition=$deployment_condition
+    
+    (Get-Content -Path EdgeSolution/deployment.template.json -Raw) | ForEach-Object {
+        $_ -replace '\$CONTAINER_REGISTRY_NAME', $acr_username `
+           -replace '\$CONTAINER_REGISTRY_LOGIN_SERVER', $acr_login_server `
+           -replace '\$CONTAINER_REGISTRY_USERNAME', $acr_username `
+           -replace '\$CONTAINER_REGISTRY_PASSWORD', $acr_password
+    } | Set-Content -Path EdgeSolution/deployment.json
+
+    az iot edge deployment create `
+        -d main-deployment `
+        --hub-name $iot_hub_name `
+        --content EdgeSolution/deployment.json `
+        --target-condition=$deployment_condition
+
+    # Create OPC layered deployment
+    $opc_deployment_name = "opc"
+    az iot edge deployment create `
+        --layered `
+        -d $opc_deployment_name `
+        --hub-name $iot_hub_name `
+        --content EdgeSolution/modules/OPC/Plc/layered.deployment.json `
+        --target-condition=$deployment_condition
 
     #endregion
 
