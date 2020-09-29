@@ -3,7 +3,6 @@ function New-IIoTEnvironment(
     [string]$resource_group = "IIoTRG",
     [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
-    #[string]$opc_vm_size = "Standard_D2s_v3",
     [string]$edge_vm_size = "Standard_D2s_v3",
     [string]$acr_login_server = "marvacr.azurecr.io",
     [string]$acr_username = "marvacr",
@@ -17,41 +16,6 @@ function New-IIoTEnvironment(
 
     # create resource group
     az group create --name $resource_group --location $location
-
-    #region create Windows VM (OPC simulator)
-    # $opc_vm_name = "opc-sim-vm"
-    # $opc_vm_password = [System.Web.Security.Membership]::GeneratePassword($password_length, $password_non_alpha_chars)
-
-    # az vm create `
-    #     --resource-group $resource_group `
-    #     --name $opc_vm_name `
-    #     --image win2016datacenter `
-    #     --size $opc_vm_size `
-    #     --admin-username azureuser `
-    #     --admin-password $opc_vm_password
-
-    # # Open ports
-    # # RDP
-    # az vm open-port `
-    # --resource-group $resource_group `
-    # --name $opc_vm_name `
-    # --port 3389
-
-    # # OPC
-    # az vm open-port `
-    # --resource-group $resource_group `
-    # --name $opc_vm_name `
-    # --port 53530
-
-    # # Use CustomScript extension to install IIS.
-    # az vm extension set `
-    # --resource-group $resource_group `
-    # --vm-name $opc_vm_name `
-    # --publisher Microsoft.Compute `
-    # --version 1.8 `
-    # --name CustomScriptExtension `
-    # --settings '{"fileUris": "", "commandToExecute":"powershell.exe Install-WindowsFeature -Name Web-Server"}'
-    #endregion
 
     #region create Linux VM (IoT edge device)
     $edge_vm_name = "linux-edge-vm-1"
@@ -142,7 +106,164 @@ function New-IIoTEnvironment(
         --content EdgeSolution/modules/OPC/Plc/layered.deployment.json `
         --target-condition=$deployment_condition `
         --priority $priority
+    #endregion
 
+    #region Database
+
+    # Create a Cosmos account for SQL API
+    $cosmos_account_name = "cosmos-$($env_hash)"
+    $database_name = "iiotdb"
+    $container_name = "telemetry"
+    $container_partition_key = "/NodeId"
+    $ttl_days = 15
+
+    az cosmosdb create `
+        --resource-group $resource_group `
+        --name $cosmos_account_name `
+        --default-consistency-level Eventual `
+        --locations regionName=$location failoverPriority=0 isZoneRedundant=False
+
+    # Create a SQL API database
+    az cosmosdb sql database create `
+        --resource-group $resource_group `
+        --account-name $cosmos_account_name `
+        --name $database_name
+
+    # Create SQL API container
+    az cosmosdb sql container create `
+        --resource-group $resource_group `
+        --account-name $cosmos_account_name `
+        --database-name $database_name `
+        --name $container_name `
+        --partition-key-path $container_partition_key `
+        --ttl ($ttl_days * 24 * 3600)
+    #endregion
+
+    #region stream analytics
+    $asa_name = "asa-$($env_hash)"
+    $asa_input_job_name = "asaiotinput"
+    $asa_output_job_name = "asacosmosoutput"
+    $asa_consumer_group = "streamanalytics"
+    $asa_policy_name = "streamanalytics"
+
+    # create iot hub policy
+    az iot hub policy create `
+        --hub-name $iot_hub_name `
+        --name $asa_policy_name `
+        --permissions ServiceConnect
+    
+    $policy_shared_key = (az iot hub show-connection-string `
+        --hub-name $iot_hub_name `
+        --policy-name $asa_policy_name `
+        --query 'connectionString' `
+        -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
+
+    # create iot hub consumer group
+    az iot hub consumer-group create `
+        --hub-name $iot_hub_name `
+        --name $asa_consumer_group
+
+    # create ASA job
+    az stream-analytics job create `
+        --resource-group $resource_group `
+        --name $asa_name `
+        --location $location `
+        --compatibility-level 1.2 `
+        --output-error-policy "Drop" `
+        --events-outoforder-policy "Drop" `
+        --events-outoforder-max-delay 5 `
+        --events-late-arrival-max-delay 16 `
+        --data-locale "en-US"
+
+    # create ASA input
+    $input_job = @{
+        "type" = "Microsoft.Devices/IotHubs"
+        "properties" = @{
+            "iotHubNamespace" = $iot_hub_name
+            "sharedAccessPolicyName" = $asa_policy_name
+            "sharedAccessPolicyKey" = $policy_shared_key
+            "consumerGroupName" = $asa_consumer_group
+            "endpoint" = "messages/events"
+        }
+    }
+    Convertto-Json -InputObject $input_job | Set-Content ./input-datasource.json
+
+    $input_serialization = @{
+        "type" = "Json"
+        "properties" = @{
+            "encoding" = "UTF8"
+        }
+    }
+    Convertto-Json -InputObject $input_serialization | Set-Content ./input-serialization.json
+
+    az stream-analytics input create `
+        --resource-group $resource_group `
+        --job-name $asa_name `
+        --name $asa_input_job_name `
+        --type Stream `
+        --datasource input-datasource.json `
+        --serialization input-serialization.json
+    
+    # create ASA output
+    $cosmos_key = az cosmosdb keys list --resource-group $resource_group --name $cosmos_account_name --query primaryMasterKey -o tsv
+
+    $output_job = @{
+        "type" = "Microsoft.Storage/DocumentDB"
+        "properties" = @{
+            "accountId" = $cosmos_account_name
+            "accountKey" = $cosmos_key
+            "database" = $database_name
+            "collectionNamePattern" = $container_name
+            "partitionKey" = $container_partition_key
+            "documentId" = "documentId"
+        }
+    }
+    Convertto-Json -InputObject $output_job | Set-Content -Path ./output-datasource.json
+
+    $output_serialization = @{
+        "type" = "Json"
+        "properties" = @{
+            "encoding" = "UTF8"
+        }
+    }
+    Convertto-Json -InputObject $output_serialization | Set-Content ./output-serialization.json
+
+    az stream-analytics output create `
+        --resource-group $resource_group `
+        --job-name $asa_name `
+        --name $asa_output_job_name `
+        --datasource ./output-datasource.json `
+        --serialization ./output-serialization.json
+
+    # Create ASA query
+    $query = "SELECT
+    GetMetadataPropertyValue($asa_input_job_name, 'EventId') AS id,
+    SourceTimestamp,
+    NodeId,
+    ApplicationUri,
+    IoTHub.ConnectionDeviceId,
+    Status,
+    DipData,
+    AlternatingBoolean,
+    NegativeTrendData,
+    PositiveTrendData,
+    RandomSignedInt32,
+    RandomUnsignedInt32,
+    SpikeData,
+    StepUp
+    INTO asacosmosoutput 
+    FROM asaiotinput"
+
+    az stream-analytics transformation create `
+        --resource-group $resource_group `
+        --job-name $asa_name `
+        --name Transformation `
+        --transformation-query $query
+    
+    # Start ASA job
+    az stream-analytics job start `
+        --resource-group $resource_group `
+        --name $asa_name
     #endregion
 
     Write-Host ""

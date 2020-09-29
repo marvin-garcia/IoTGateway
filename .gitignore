@@ -352,3 +352,9 @@ MigrationBackup/
 **/.vscode
 **/module.json
 DigitalTwins/appsettings.dev.json
+
+# Stream Analytics configuration files
+input-datasource.json
+input-serialization.json
+output-datasource.json
+output-serialization.json
