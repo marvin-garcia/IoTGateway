@@ -134,12 +134,14 @@ function New-IIoTEnvironment(
 
     # Create OPC layered deployment
     $opc_deployment_name = "opc"
+    $priority = 1
     az iot edge deployment create `
         --layered `
-        -d $opc_deployment_name `
+        -d "$opc_deployment_name-$priority" `
         --hub-name $iot_hub_name `
         --content EdgeSolution/modules/OPC/Plc/layered.deployment.json `
-        --target-condition=$deployment_condition
+        --target-condition=$deployment_condition `
+        --priority $priority
 
     #endregion
 
