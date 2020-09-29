@@ -22,12 +22,23 @@
                 "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
                 "createOptions": "{\"Hostname\":\"opcPublisher\",\"Cmd\":[\"publisher\",\"--aa\",\"--pf=/appdata/publishednodes.json\"],\"HostConfig\":{\"PortBindings\":{\"9080/tcp\":[{\"HostPort\":\"9080\"}]},\"Binds\":[\"/appdata:/appdata\"]}}"
             }
+          },
+          "opcToDtdl": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "marvacr.azurecr.io/iotedge/opc-dtdl:latest",
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=OpcPlc\",\"NodeIdRegex=#[is]=([a-zA-Z0-9_.]+)\",\"ApplicationUriRegex=(.*)\"]}"
+            }
           }
         }
       },
       "$edgeHub": {
         "properties.desired.routes": {
-          "OpcPlcToHub": "FROM /messages/modules/opcPublisher/* INTO $upstream"
+          "PublisherToHub": "FROM /messages/modules/opcPublisher/* INTO $upstream",
+          "PublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/opcToDtdl/inputs/opc\")",
+          "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
         }
       }
     }
