@@ -36,7 +36,6 @@
       },
       "$edgeHub": {
         "properties.desired.routes": {
-          "PublisherToHub": "FROM /messages/modules/opcPublisher/* INTO $upstream",
           "PublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/opcToDtdl/inputs/opc\")",
           "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
         }
