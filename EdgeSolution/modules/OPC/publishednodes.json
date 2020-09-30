@@ -1,0 +1,38 @@
+{
+    "EndpointUrl": "opc.tcp://opcPlc:50000/",
+    "UseSecurity": false,
+    "OpcNodes": [
+      {
+        "Id": "ns=2;s=DipData",
+        "DisplayName": "DipData"
+      },
+      {
+        "Id": "ns=2;s=AlternatingBoolean",
+        "DisplayName": "AlternatingBoolean"
+      },
+      {
+        "Id": "ns=2;s=NegativeTrendData",
+        "DisplayName": "NegativeTrendData"
+      },
+      {
+        "Id": "ns=2;s=PositiveTrendData",
+        "DisplayName": "PositiveTrendData"
+      },
+      {
+        "Id": "ns=2;s=RandomSignedInt32",
+        "DisplayName": "RandomSignedInt32"
+      },
+      {
+        "Id": "ns=2;s=RandomUnsignedInt32",
+        "DisplayName": "RandomUnsignedInt32"
+      },
+      {
+        "Id": "ns=2;s=SpikeData",
+        "DisplayName": "SpikeData"
+      },
+      {
+        "Id": "ns=2;s=StepUp",
+        "DisplayName": "StepUp"
+      }
+    ]
+  }

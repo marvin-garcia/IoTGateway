@@ -6,7 +6,7 @@ function New-IIoTEnvironment(
     [string]$edge_vm_size = "Standard_D2s_v3",
     [string]$acr_login_server = "marvacr.azurecr.io",
     [string]$acr_username = "marvacr",
-    [string]$acr_password = "29+U=lLvcnADESCbTUSwcn9XL0qiCyrN"
+    [SecureString]$acr_password = (ConvertTo-SecureString "29+U=lLvcnADESCbTUSwcn9XL0qiCyrN" -AsPlainText -Force)
 )
 {
     $password_length = 12
@@ -103,7 +103,7 @@ function New-IIoTEnvironment(
         --layered `
         -d "$opc_deployment_name-$priority" `
         --hub-name $iot_hub_name `
-        --content EdgeSolution/modules/OPC/Plc/layered.deployment.json `
+        --content EdgeSolution/modules/OPC/layered.deployment.json `
         --target-condition=$deployment_condition `
         --priority $priority
     #endregion
