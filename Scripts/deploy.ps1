@@ -9,10 +9,8 @@ function New-IIoTEnvironment(
     [SecureString]$acr_password = (ConvertTo-SecureString "29+U=lLvcnADESCbTUSwcn9XL0qiCyrN" -AsPlainText -Force)
 )
 {
-    $password_length = 12
-    $hash_length = 8
-    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($resource_group)
-    $env_hash = [Convert]::ToBase64String($Bytes).Substring($hash_length).ToLower()
+    $env_hash = Get-EnvironmentHash -resource_group $resource_group
+    $iot_hub_name = "$($iot_hub_name)-$($env_hash)"
 
     # create resource group
     az group create --name $resource_group --location $location
@@ -22,6 +20,7 @@ function New-IIoTEnvironment(
     $edge_device_id = $edge_vm_name
     $edge_vm_image = "microsoft_iot_edge:iot_edge_vm_ubuntu:ubuntu_1604_edgeruntimeonly:latest"
     $edge_vm_username = "azureuser"
+    $password_length = 12
     $edge_vm_password = Get-RandomCharacters -length $password_length 'abcdef12345678-.!?'
     $edge_vm_dns = "$($edge_vm_name)-$($env_hash)"
 
@@ -40,8 +39,7 @@ function New-IIoTEnvironment(
     #endregion
 
     #region iot hub
-    $iot_hub_name = "$($iot_hub_name)-$($env_hash)"
-
+    
     # create iot hub
     az iot hub create `
         --resource-group $resource_group `
@@ -109,40 +107,32 @@ function New-IIoTEnvironment(
     #endregion
 
     #region Database
-
-    # Create a Cosmos account for SQL API
     $cosmos_account_name = "cosmos-$($env_hash)"
     $database_name = "iiotdb"
     $container_name = "telemetry"
     $container_partition_key = "/NodeId"
-    $ttl_days = 15
+    $ttl_days = 7
 
-    az cosmosdb create `
+    New-CosmosDBSQLAccount `
+        -location $location `
+        -resource_group $resource_group `
+        -account_name $cosmos_account_name `
+        -database_name $database_name `
+        -container_name $container_name `
+        -partition_key $container_partition_key `
+        -ttl_days = $ttl_days
+    
+    $cosmos_key = az cosmosdb keys list `
         --resource-group $resource_group `
         --name $cosmos_account_name `
-        --default-consistency-level Eventual `
-        --locations regionName=$location failoverPriority=0 isZoneRedundant=False
-
-    # Create a SQL API database
-    az cosmosdb sql database create `
-        --resource-group $resource_group `
-        --account-name $cosmos_account_name `
-        --name $database_name
-
-    # Create SQL API container
-    az cosmosdb sql container create `
-        --resource-group $resource_group `
-        --account-name $cosmos_account_name `
-        --database-name $database_name `
-        --name $container_name `
-        --partition-key-path $container_partition_key `
-        --ttl ($ttl_days * 24 * 3600)
+        --query primaryMasterKey `
+        -o tsv
     #endregion
 
     #region stream analytics
     $asa_name = "asa-$($env_hash)"
-    $asa_input_job_name = "asaiotinput"
-    $asa_output_job_name = "asacosmosoutput"
+    $asa_input_name = "iothub"
+    $asa_output_name = "cosmosdb"
     $asa_consumer_group = "streamanalytics"
     $asa_policy_name = "streamanalytics"
 
@@ -163,19 +153,7 @@ function New-IIoTEnvironment(
         --hub-name $iot_hub_name `
         --name $asa_consumer_group
 
-    # create ASA job
-    az stream-analytics job create `
-        --resource-group $resource_group `
-        --name $asa_name `
-        --location $location `
-        --compatibility-level 1.2 `
-        --output-error-policy "Drop" `
-        --events-outoforder-policy "Drop" `
-        --events-outoforder-max-delay 5 `
-        --events-late-arrival-max-delay 16 `
-        --data-locale "en-US"
-
-    # create ASA input
+    # Define input settings
     $input_job = @{
         "type" = "Microsoft.Devices/IotHubs"
         "properties" = @{
@@ -186,7 +164,6 @@ function New-IIoTEnvironment(
             "endpoint" = "messages/events"
         }
     }
-    Convertto-Json -InputObject $input_job | Set-Content ./input-datasource.json
 
     $input_serialization = @{
         "type" = "Json"
@@ -194,19 +171,8 @@ function New-IIoTEnvironment(
             "encoding" = "UTF8"
         }
     }
-    Convertto-Json -InputObject $input_serialization | Set-Content ./input-serialization.json
 
-    az stream-analytics input create `
-        --resource-group $resource_group `
-        --job-name $asa_name `
-        --name $asa_input_job_name `
-        --type Stream `
-        --datasource input-datasource.json `
-        --serialization input-serialization.json
-    
-    # create ASA output
-    $cosmos_key = az cosmosdb keys list --resource-group $resource_group --name $cosmos_account_name --query primaryMasterKey -o tsv
-
+    # Define output settings
     $output_job = @{
         "type" = "Microsoft.Storage/DocumentDB"
         "properties" = @{
@@ -218,7 +184,6 @@ function New-IIoTEnvironment(
             "documentId" = "documentId"
         }
     }
-    Convertto-Json -InputObject $output_job | Set-Content -Path ./output-datasource.json
 
     $output_serialization = @{
         "type" = "Json"
@@ -226,23 +191,14 @@ function New-IIoTEnvironment(
             "encoding" = "UTF8"
         }
     }
-    Convertto-Json -InputObject $output_serialization | Set-Content ./output-serialization.json
 
-    az stream-analytics output create `
-        --resource-group $resource_group `
-        --job-name $asa_name `
-        --name $asa_output_job_name `
-        --datasource ./output-datasource.json `
-        --serialization ./output-serialization.json
-
-    # Create ASA query
+    # Define query
     $query = "SELECT
-    GetMetadataPropertyValue($asa_input_job_name, 'EventId') AS id,
+    GetMetadataPropertyValue($asa_input_name, 'EventId') AS id,
     SourceTimestamp,
     NodeId,
     ApplicationUri,
     IoTHub.ConnectionDeviceId,
-    Status,
     DipData,
     AlternatingBoolean,
     NegativeTrendData,
@@ -251,19 +207,28 @@ function New-IIoTEnvironment(
     RandomUnsignedInt32,
     SpikeData,
     StepUp
-    INTO asacosmosoutput 
-    FROM asaiotinput"
+    INTO $asa_input_name
+    FROM $asa_output_name"
 
-    az stream-analytics transformation create `
+    # create ASA job
+    New-StreamAnalyticsCloudJob `
+        -location $location `
+        -resource_group $resource_group `
+        -job_name $asa_name `
+        -input_name $asa_input_name `
+        -input_datasource $input_job `
+        -input_serialization $input_serialization `
+        -output_name $asa_output_name `
+        -output_datasource $output_datasource `
+        -output_serialization $output_serialization `
+        -query $query
+
+    #region time series insight
+    $tsi_name = "tsi-$($env_hash)"
+
+    az timeseriesinsights environment standard create `
         --resource-group $resource_group `
-        --job-name $asa_name `
-        --name Transformation `
-        --transformation-query $query
-    
-    # Start ASA job
-    az stream-analytics job start `
-        --resource-group $resource_group `
-        --name $asa_name
+        --
     #endregion
 
     Write-Host ""
@@ -432,4 +397,217 @@ function Get-RandomCharacters(
     $private:ofs="" 
     $array = [String]$characters[$random]
     return $array
+}
+
+function Get-EnvironmentHash(
+    [string]$resource_group)
+)
+{
+    $hash_length = 8
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($resource_group)
+    $env_hash = [Convert]::ToBase64String($Bytes).Substring($hash_length).ToLower()
+
+    return $env_hash
+}
+
+function New-StreamAnalyticsEdgeJob(
+    [string]$location = "eastus",
+    [string]$resource_group = "IIoTRG",
+    [string]$job_name,
+    [string]$storage_name,
+    [string]$storage_container
+)
+{
+    $storage_key = az storage account keys list `
+        --resource-group $resource_group `
+        --account-name $storage_name `
+        --query '[0].value' `
+        -o tsv
+
+    $request = @{
+        "location" = $location
+        "tags" = @{
+            "key" = "value"
+            "ms-suppressjobstatusmetrics" = "true"
+        }
+        "sku" = @{
+            "name" = "Standard"
+        }
+        "properties" = @{
+            "sku" = @{
+                "name" = "standard"
+            }
+            "eventsLateArrivalMaxDelayInSeconds" = 1
+            "jobType" = "edge"
+            "inputs" = @(
+                @{
+                    "name" = "edgeinput"
+                    "properties" = @{
+                        "type" = "stream"
+                        "serialization" = @{
+                            "type" = "JSON"
+                            "properties" = @{
+                                "encoding" = "UTF8"
+                            }
+                        }
+                        "datasource" = @{
+                            "type" = "GatewayMessageBus"
+                            "properties" = @{}
+                        }
+                    }
+                }
+            )
+            "transformation" = @{
+                "name" = "edgequery"
+                "properties" = @{
+                    "query" = "SELECT * INTO edgeoutput FROM edgeinput"
+                }
+            }
+            "package" = @{
+                "storageAccount" = @{
+                    "accountName" = $storage_name
+                    "accountKey" = $storage_key
+                }
+                "container" = $storage_container
+            }
+            "outputs" = @(
+                @{
+                    "name" = "edgeoutput"
+                    "properties" = @{
+                        "serialization" = @{
+                            "type" = "JSON"
+                            "properties" = @{
+                                "encoding" = "UTF8"
+                            }
+                        }
+                        "datasource" = @{
+                            "type" = "GatewayMessageBus"
+                            "properties" = @{}
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    $token = az account get-access-token --resource-type arm --query accessToken -o tsv
+    $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
+    $content = ConvertTo-Json -InputObject $request -Depth 8
+    $create_uri = "https://management.azure.com/subscriptions/$($subscription_id)/resourcegroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)?api-version=2017-04-01-preview"
+    $create_response = Invoke-RestMethod $create_uri `
+        -Method PUT `
+        -Body $content `
+        -ContentType "application/json" `
+        -Authentication Bearer -Token $secure_token
+
+    $publish_uri = "https://management.azure.com/subscriptions/$($subscription_id)/resourceGroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)/publishedgepackage?api-version=2017-04-01-preview"
+    $publish_response = Invoke-WebRequest $publish_uri `
+        -Method POST `
+        -Authentication Bearer -Token $secure_token
+
+    do
+    {
+        $package_response = Invoke-RestMethod $publish_response.Headers.Location[0] `
+            -Authentication Bearer -Token $secure_token
+        
+        Start-Sleep -Seconds 30
+    } until (!!$package_response)
+        
+    return $package_response
+}
+
+function New-StreamAnalyticsCloudJob(
+    [string]$location,
+    [string]$resource_group,
+    [string]$job_name,
+    [string]$input_name,
+    [string]$input_type = "Stream",
+    [Hashtable]$input_datasource,
+    [Hashtable]$input_serialization,
+    [string]$output_name,
+    [Hashtable]$output_datasource,
+    [Hashtable]$output_serialization,
+    [string]$query
+)
+{
+    # create job
+    az stream-analytics job create `
+        --resource-group $resource_group `
+        --name $job_name `
+        --location $location `
+        --compatibility-level 1.2 `
+        --output-error-policy "Drop" `
+        --events-outoforder-policy "Drop" `
+        --events-outoforder-max-delay 5 `
+        --events-late-arrival-max-delay 16 `
+        --data-locale "en-US"
+
+    # create job input
+    Convertto-Json -InputObject $input_datasource | Set-Content ./input-datasource.json
+    Convertto-Json -InputObject $input_serialization | Set-Content ./input-serialization.json
+
+    az stream-analytics input create `
+        --resource-group $resource_group `
+        --job-name $job_name `
+        --name $input_name `
+        --type $input_type `
+        --datasource input-datasource.json `
+        --serialization input-serialization.json
+    
+    # create job output
+    Convertto-Json -InputObject $output_datasource | Set-Content -Path ./output-datasource.json
+    Convertto-Json -InputObject $output_serialization | Set-Content ./output-serialization.json
+
+    az stream-analytics output create `
+        --resource-group $resource_group `
+        --job-name $job_name `
+        --name $output_name `
+        --datasource ./output-datasource.json `
+        --serialization ./output-serialization.json
+
+    # create transformation
+    az stream-analytics transformation create `
+        --resource-group $resource_group `
+        --job-name $job_name `
+        --name Transformation `
+        --transformation-query $query
+    
+    # Start ASA job
+    az stream-analytics job start `
+        --resource-group $resource_group `
+        --name $job_name
+}
+
+function New-CosmosDBSQLAccount(
+    [string]$location,
+    [string]$resource_group,
+    [string]$account_name,
+    [string]$database_name,
+    [string]$container_name,
+    [string]$partition_key,
+    [int]$throughput = 400,
+    [int]$ttl_days = 7
+)
+{
+    # Create account
+    az cosmosdb create `
+        --resource-group $resource_group `
+        --name $account_name `
+        --default-consistency-level Eventual `
+        --locations regionName=$location failoverPriority=0 isZoneRedundant=False
+
+    # Create a SQL API database
+    az cosmosdb sql database create `
+        --resource-group $resource_group `
+        --account-name $account_name `
+        --name $database_name
+
+    # Create SQL API container
+    az cosmosdb sql container create `
+        --resource-group $resource_group `
+        --account-name $account_name `
+        --database-name $database_name `
+        --name $container_name `
+        --partition-key-path $partition_key `
+        --ttl ($ttl_days * 24 * 3600)
 }
