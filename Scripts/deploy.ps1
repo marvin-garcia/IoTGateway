@@ -8,11 +8,12 @@ function New-IIoTEnvironment(
 {
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
     $iot_hub_name = "$($iot_hub_name)-$($env_hash)"
+    $deployment_condition = "tags.environment='dev'"
 
     # create resource group
     az group create --name $resource_group --location $location
 
-    #region create Linux VM (IoT edge device)
+    #region create IoT edge VM
     $edge_vm_name = "linux-edge-vm-1"
     $edge_device_id = $edge_vm_name
     $edge_vm_image = "microsoft_iot_edge:iot_edge_vm_ubuntu:ubuntu_1604_edgeruntimeonly:latest"
@@ -76,8 +77,6 @@ function New-IIoTEnvironment(
         --condition true
     
     # Create main deployment
-    $deployment_condition = "tags.environment='dev'"
-
     az iot edge deployment create `
         -d main-deployment `
         --hub-name $iot_hub_name `
@@ -247,7 +246,6 @@ function New-IIoTEnvironment(
         --content EdgeSolution/modules/OPC/layered.deployment.json `
         --target-condition=$deployment_condition `
         --priority $priority
-    
     #endregion
 
     #region time series insight
