@@ -31,14 +31,29 @@
               "image": "marvingarcia/iotedge-opc-dtdl:latest",
               "createOptions": "{\"Env\":[\"DefaultApplicationUri=OpcPlc\",\"NodeIdRegex=#[is]=([a-zA-Z0-9_.]+)\",\"ApplicationUriRegex=(.*)\"]}"
             }
+          },
+          "anomalyDetection": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+                "image": "mcr.microsoft.com/azure-stream-analytics/azureiotedge:1.0.8",
+                "createOptions": ""
+            },
+            "env": __ASA_ENV__
           }
         }
       },
       "$edgeHub": {
         "properties.desired.routes": {
           "PublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/opcToDtdl/inputs/opc\")",
-          "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream"
+          "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream",
+          "TranslatorToAnomalyDetection": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO BrokeredEndpoint(\"modules/anomalyDetection/input/__ASA_INPUT_NAME__\")",
+          "AnomalyDetectionToHub": "FROM /messages/modules/anomalyDetection/outputs/* INTO $upstream"
         }
+      },
+      "anomalyDetection": {
+        "properties.desired": __ASA_DESIRED_PROPERTIES__
       }
     }
   }

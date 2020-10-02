@@ -358,3 +358,4 @@ input-datasource.json
 input-serialization.json
 output-datasource.json
 output-serialization.json
+EdgeSolution/modules/OPC/layered.deployment.json

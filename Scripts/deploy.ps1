@@ -3,10 +3,7 @@ function New-IIoTEnvironment(
     [string]$resource_group = "IIoTRG",
     [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
-    [string]$edge_vm_size = "Standard_D2s_v3",
-    [string]$acr_login_server = "marvacr.azurecr.io",
-    [string]$acr_username = "marvacr",
-    [SecureString]$acr_password = (ConvertTo-SecureString "29+U=lLvcnADESCbTUSwcn9XL0qiCyrN" -AsPlainText -Force)
+    [string]$edge_vm_size = "Standard_D2s_v3"
 )
 {
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
@@ -80,30 +77,12 @@ function New-IIoTEnvironment(
     
     # Create main deployment
     $deployment_condition = "tags.environment='dev'"
-    
-    (Get-Content -Path EdgeSolution/deployment.template.json -Raw) | ForEach-Object {
-        $_ -replace '\$CONTAINER_REGISTRY_NAME', $acr_username `
-           -replace '\$CONTAINER_REGISTRY_LOGIN_SERVER', $acr_login_server `
-           -replace '\$CONTAINER_REGISTRY_USERNAME', $acr_username `
-           -replace '\$CONTAINER_REGISTRY_PASSWORD', $acr_password
-    } | Set-Content -Path EdgeSolution/deployment.json
 
     az iot edge deployment create `
         -d main-deployment `
         --hub-name $iot_hub_name `
         --content EdgeSolution/deployment.json `
         --target-condition=$deployment_condition
-
-    # Create OPC layered deployment
-    $opc_deployment_name = "opc"
-    $priority = 1
-    az iot edge deployment create `
-        --layered `
-        -d "$opc_deployment_name-$priority" `
-        --hub-name $iot_hub_name `
-        --content EdgeSolution/modules/OPC/layered.deployment.json `
-        --target-condition=$deployment_condition `
-        --priority $priority
     #endregion
 
     #region Database
@@ -222,13 +201,61 @@ function New-IIoTEnvironment(
         -output_datasource $output_datasource `
         -output_serialization $output_serialization `
         -query $query
+    #endregion
+
+    #region stream analytics edge
+    $asa_edge_name = "asa-edge-$($env_hash)"
+    $asa_edge_storage_name = "asaedgestorage$($env_hash)"
+    $asa_edge_container_name = "edgeanomaly"
+    $asa_edge_input_name = "edgeinput"
+    $asa_edge_output_name = "edgeoutput"
+    $asa_edge_query = "SELECT * INTO $($asa_edge_output_name) FROM $($asa_edge_input_name)"
+
+    az storage account create `
+        --location $location `
+        --resource-group $resource_group `
+        --name $asa_edge_storage_name `
+        --access-tier Cool `
+        --kind StorageV2 `
+        --sku Standard_LRS
+
+    $edge_package = New-StreamAnalyticsEdgeJob `
+        -location $location `
+        -resource_group $resource_group `
+        -job_name $asa_edge_name `
+        -storage_name $asa_edge_storage_name `
+        -storage_container $asa_edge_container_name `
+        -input_name $asa_edge_input_name `
+        -output_name $asa_edge_output_name `
+        -query $asa_edge_query
+    #endregion
+
+    #region Edge deployment
+    (Get-Content -Path EdgeSolution/modules/OPC/layered.deployment.template.json -Raw) | ForEach-Object {
+        $_ -replace '__ASA_ENV__', (ConvertTo-Json -InputObject $edge_package.env -Depth 10) `
+           -replace '__ASA_INPUT_NAME__', $edge_package.endpoints.inputs[0] `
+           -replace '__ASA_DESIRED_PROPERTIES__', (ConvertTo-Json -InputObject $edge_package.twin.content.properties_desired -Depth 10)
+    } | Set-Content -Path EdgeSolution/modules/OPC/layered.deployment.json
+
+    # Create OPC layered deployment
+    $opc_deployment_name = "opc"
+    $priority = 1
+    az iot edge deployment create `
+        --layered `
+        -d "$opc_deployment_name-$priority" `
+        --hub-name $iot_hub_name `
+        --content EdgeSolution/modules/OPC/layered.deployment.json `
+        --target-condition=$deployment_condition `
+        --priority $priority
+    
+    #endregion
 
     #region time series insight
-    $tsi_name = "tsi-$($env_hash)"
+    # $tsi_name = "tsi-$($env_hash)"
 
-    az timeseriesinsights environment standard create `
-        --resource-group $resource_group `
-        --
+    # az timeseriesinsights environment standard create `
+    #     --resource-group $resource_group `
+    #     --
     #endregion
 
     Write-Host ""
@@ -400,7 +427,7 @@ function Get-RandomCharacters(
 }
 
 function Get-EnvironmentHash(
-    [string]$resource_group)
+    [string]$resource_group
 )
 {
     $hash_length = 8
@@ -415,7 +442,10 @@ function New-StreamAnalyticsEdgeJob(
     [string]$resource_group = "IIoTRG",
     [string]$job_name,
     [string]$storage_name,
-    [string]$storage_container
+    [string]$storage_container,
+    [string]$input_name,
+    [string]$output_name,
+    [string]$query
 )
 {
     $storage_key = az storage account keys list `
@@ -441,7 +471,7 @@ function New-StreamAnalyticsEdgeJob(
             "jobType" = "edge"
             "inputs" = @(
                 @{
-                    "name" = "edgeinput"
+                    "name" = $input_name
                     "properties" = @{
                         "type" = "stream"
                         "serialization" = @{
@@ -460,7 +490,7 @@ function New-StreamAnalyticsEdgeJob(
             "transformation" = @{
                 "name" = "edgequery"
                 "properties" = @{
-                    "query" = "SELECT * INTO edgeoutput FROM edgeinput"
+                    "query" = $query
                 }
             }
             "package" = @{
@@ -472,7 +502,7 @@ function New-StreamAnalyticsEdgeJob(
             }
             "outputs" = @(
                 @{
-                    "name" = "edgeoutput"
+                    "name" = $output_name
                     "properties" = @{
                         "serialization" = @{
                             "type" = "JSON"
@@ -513,7 +543,11 @@ function New-StreamAnalyticsEdgeJob(
         Start-Sleep -Seconds 30
     } until (!!$package_response)
         
-    return $package_response
+    $package = ConvertFrom-Json `
+        -InputObject (($package_response.manifest | Out-String) -replace 'properties.desired', 'properties_desired') `
+        -Depth 15
+
+    return $package
 }
 
 function New-StreamAnalyticsCloudJob(
