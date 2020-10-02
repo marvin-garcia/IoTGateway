@@ -28,7 +28,7 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "marvacr.azurecr.io/iotedge/opc-dtdl:latest",
+              "image": "marvingarcia/iotedge-opc-dtdl:latest",
               "createOptions": "{\"Env\":[\"DefaultApplicationUri=OpcPlc\",\"NodeIdRegex=#[is]=([a-zA-Z0-9_.]+)\",\"ApplicationUriRegex=(.*)\"]}"
             }
           }
