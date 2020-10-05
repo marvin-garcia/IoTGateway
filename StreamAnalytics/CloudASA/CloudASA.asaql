@@ -1,0 +1,49 @@
+-- WITH stdev AS
+-- (
+--     SELECT
+--         System.Timestamp() as Timestamp,
+--         NodeId,
+--         ApplicationUri,
+--         IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
+--         STDEV(DipData) AS DipStdev
+--     FROM iothub TIMESTAMP BY Timestamp
+--     WHERE DipData IS NOT NULL
+--     GROUP BY NodeId, ApplicationUri, IoTHub.ConnectionDeviceId, TumblingWindow(minute, 3)
+-- )
+
+SELECT
+    System.Timestamp() as Timestamp,
+    NodeId,
+    ApplicationUri,
+    DipData,
+    AVG(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipAvg,
+    MAX(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipMax,
+    MIN(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipMin,
+    COUNT(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipCount,
+    SpikeData,
+    AVG(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeAvg,
+    MAX(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeMax,
+    MIN(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeMin,
+    COUNT(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeCount,
+    PositiveTrendData,
+    AVG(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendAvg,
+    MAX(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendMax,
+    MIN(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendMin,
+    COUNT(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendCount,
+    NegativeTrendData,
+    AVG(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendAvg,
+    MAX(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendMax,
+    MIN(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendMin,
+    COUNT(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendCount,
+    RandomSignedInt32,
+    AVG(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedAvg,
+    MAX(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedMax,
+    MIN(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedMin,
+    COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedCount,
+    -- Standard deviations
+    stdev.DipStdev
+FROM iothub --TIMESTAMP BY Timestamp
+-- JOIN StDev TIMESTAMP BY Timestamp
+-- ON iothub.IoTHub.ConnectionDeviceId = stdev.ConnectionDeviceId 
+-- AND iothub.ApplicationUri = stdev.ApplicationUri
+-- AND DATEDIFF(minute, iothub, Stdev) BETWEEN 1 AND 3

@@ -30,6 +30,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+*.dll
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -359,3 +360,4 @@ input-serialization.json
 output-datasource.json
 output-serialization.json
 EdgeSolution/modules/OPC/layered.deployment.json
+**/LocalRunOutputs/
