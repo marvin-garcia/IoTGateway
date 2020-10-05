@@ -361,3 +361,5 @@ output-datasource.json
 output-serialization.json
 EdgeSolution/modules/OPC/layered.deployment.json
 **/LocalRunOutputs/
+StreamAnalytics/**/Inputs/*.json
+StreamAnalytics/**/Outputs/*.json
