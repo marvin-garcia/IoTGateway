@@ -1,3 +1,5 @@
+## https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-cicd-api
+
 function New-IIoTEnvironment(
     [string]$location = "eastus",
     [string]$resource_group = "IIoTRG",
@@ -107,10 +109,122 @@ function New-IIoTEnvironment(
         -o tsv
     #endregion
 
+    #region event hubs
+    $eh_name = "eh-$($env_hash)"
+    $eh_notifications_name = "notifications"
+    $eh_notifications_consumer_group = "consumer1"
+    $eh_alerts_name = "alerts"
+    $eh_alerts_consumer_group = "consumer1"
+    $eh_send_policy_name = "send"
+    $eh_listen_policy_name = "listen"
+    
+    # create namespace
+    az eventhubs namespace create `
+        --location $location `
+        --resource-group $resource_group `
+        --name $eh_name `
+        --sku Standard
+    
+    #region Create notifications event hub
+    
+    # create event hub
+    az eventhubs eventhub create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_notifications_name
+
+    # create consumer group
+    az eventhubs eventhub consumer-group create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_notifications_consumer_group
+
+    # create shared key to Listen to events
+    az eventhubs eventhub authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_listen_policy_name `
+        --rights Listen
+
+    # Retrieve shared key for Listen
+    $eh_notifications_listen_key = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_listen_policy_name `
+        --query primaryKey -o tsv
+
+    # create shared key to send events
+    az eventhubs eventhub authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_send_policy_name `
+        --rights Send
+
+    # retrieve shared key for Send
+    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_send_policy_name `
+        --query primaryKey -o tsv
+    #endregion
+
+    #region Create alerts event hub
+    
+    # create event hub
+    az eventhubs eventhub create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_alerts_name
+
+    # create consumer group
+    az eventhubs eventhub consumer-group create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_alerts_consumer_group
+
+    # create shared key to Listen to events
+    az eventhubs eventhub authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_listen_policy_name `
+        --rights Listen
+
+    # Retrieve shared key for Listen
+    $eh_alerts_listen_key = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_listen_policy_name `
+        --query primaryKey -o tsv
+
+    # create shared key to send events
+    az eventhubs eventhub authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_send_policy_name `
+        --rights Send
+
+    # retrieve shared key for Send
+    $eh_alerts_send_key = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_send_policy_name `
+        --query primaryKey -o tsv
+    #endregion
+
+    #endregion
+
     #region stream analytics
     $asa_name = "asa-$($env_hash)"
-    $asa_input_name = "iothub"
-    $asa_output_name = "cosmosdb"
     $asa_consumer_group = "streamanalytics"
     $asa_policy_name = "streamanalytics"
 
@@ -131,76 +245,44 @@ function New-IIoTEnvironment(
         --hub-name $iot_hub_name `
         --name $asa_consumer_group
 
-    # Define input settings
-    $input_job = @{
-        "type" = "Microsoft.Devices/IotHubs"
-        "properties" = @{
-            "iotHubNamespace" = $iot_hub_name
-            "sharedAccessPolicyName" = $asa_policy_name
-            "sharedAccessPolicyKey" = $policy_shared_key
-            "consumerGroupName" = $asa_consumer_group
-            "endpoint" = "messages/events"
-        }
+    $asa_parameters = @{
+        "ASAApiVersion" = @{ "value" = "2017-04-01-preview" }
+        "OutputStartMode" = @{ "value" = "JobStartTime" }
+        "OutputStartTime" = @{ "value" = "2019-01-01T00:00:00Z" }
+        "DataLocale" = @{ "value" = "en-US" }
+        "OutputErrorPolicy" = @{ "value" = "Stop" }
+        "EventsLateArrivalMaxDelayInSeconds" = @{ "value" = 5 }
+        "EventsOutOfOrderMaxDelayInSeconds" = @{ "value" = 0 }
+        "EventsOutOfOrderPolicy" = @{ "value" = "Adjust" }
+        "StreamingUnits" = @{ "value" = 3 }
+        "CompatibilityLevel" = @{ "value" = "1.2" }
+        "StreamAnalyticsJobName" = @{ "value" = $asa_name }
+        "Location" = @{ "value" = $location }
+        "Input_iothub_iotHubNamespace" = @{ "value" = $iot_hub_name }
+        "Input_iothub_consumerGroupName" = @{ "value" = $asa_consumer_group }
+        "Input_iothub_endpoint" = @{ "value" = "messages/events" }
+        "Input_iothub_sharedAccessPolicyName" = @{ "value" = $asa_policy_name }
+        "Input_iothub_sharedAccessPolicyKey" = @{ "value" = $policy_shared_key }
+        "Output_cosmosdb_accountId" = @{ "value" = $cosmos_account_name }
+        "Output_cosmosdb_accountKey" = @{ "value" = $cosmos_key }
+        "Output_cosmosdb_database" = @{ "value" = $database_name }
+        "Output_cosmosdb_collectionNamePattern" = @{ "value" = $container_name }
+        "Output_cosmosdb_documentId" = @{ "value" = "id" }
+        "Output_NotificationsEventHub_serviceBusNamespace" = @{ "value" = $eh_name }
+        "Output_NotificationsEventHub_eventHubName" = @{ "value" = $eh_notifications_name }
+        "Output_NotificationsEventHub_partitionKey" = @{ "value" = "" }
+        "Output_NotificationsEventHub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
+        "Output_NotificationsEventHub_sharedAccessPolicyKey" = @{ "value" = $eh_notifications_send_key }
     }
+    Set-Content -Value (ConvertTo-Json $asa_parameters) -Path StreamAnalytics/CloudASA/Deploy/params.json
 
-    $input_serialization = @{
-        "type" = "Json"
-        "properties" = @{
-            "encoding" = "UTF8"
-        }
-    }
-
-    # Define output settings
-    $output_job = @{
-        "type" = "Microsoft.Storage/DocumentDB"
-        "properties" = @{
-            "accountId" = $cosmos_account_name
-            "accountKey" = $cosmos_key
-            "database" = $database_name
-            "collectionNamePattern" = $container_name
-            "partitionKey" = $container_partition_key
-            "documentId" = "documentId"
-        }
-    }
-
-    $output_serialization = @{
-        "type" = "Json"
-        "properties" = @{
-            "encoding" = "UTF8"
-        }
-    }
-
-    # Define query
-    $query = "SELECT
-    GetMetadataPropertyValue($asa_input_name, 'EventId') AS id,
-    SourceTimestamp,
-    NodeId,
-    ApplicationUri,
-    IoTHub.ConnectionDeviceId,
-    DipData,
-    AlternatingBoolean,
-    NegativeTrendData,
-    PositiveTrendData,
-    RandomSignedInt32,
-    RandomUnsignedInt32,
-    SpikeData,
-    StepUp
-    INTO $asa_input_name
-    FROM $asa_output_name"
-
-    # create ASA job
-    New-StreamAnalyticsCloudJob `
-        -location $location `
-        -resource_group $resource_group `
-        -job_name $asa_name `
-        -input_name $asa_input_name `
-        -input_datasource $input_job `
-        -input_serialization $input_serialization `
-        -output_name $asa_output_name `
-        -output_datasource $output_datasource `
-        -output_serialization $output_serialization `
-        -query $query
-    #endregion
+    $asa_deployment_name = "CloudASAJob"
+    az deployment group create `
+        --resource-group $resource_group `
+        --name $asa_deployment_name `
+        --mode Incremental `
+        --template-file StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.json `
+        --parameters StreamAnalytics/CloudASA/Deploy/params.json
 
     #region stream analytics edge
     $asa_edge_name = "asa-edge-$($env_hash)"
@@ -208,7 +290,7 @@ function New-IIoTEnvironment(
     $asa_edge_container_name = "edgeanomaly"
     $asa_edge_input_name = "edgeinput"
     $asa_edge_output_name = "edgeoutput"
-    $asa_edge_query = "SELECT * INTO $($asa_edge_output_name) FROM $($asa_edge_input_name)"
+    $asa_edge_query = "SELECT * INTO $($asa_edge_output_name) FROM $($asa_edge_input_name) WHERE DipData>100"
 
     az storage account create `
         --location $location `
@@ -238,7 +320,7 @@ function New-IIoTEnvironment(
 
     # Create OPC layered deployment
     $opc_deployment_name = "opc"
-    $priority = 1
+    $priority = 6
     az iot edge deployment create `
         --layered `
         -d "$opc_deployment_name-$priority" `
@@ -266,18 +348,23 @@ function New-IIoTEnvironment(
 
 function New-IoTStoragePipeline(
     [string]$subscription_id,
-    [string]$resource_group = "IoTEdgeDataStreaming",
-    [string]$iot_hub_name = "TelemetryIoTHub",
-    [string]$storage_account_name = "iottelemetrydatastorage",
-    [string]$container_name = "telemetrydata",
-    [string]$iot_hub_endpoint_name = "eventhub-endpoint",
-    [string]$iot_hub_route_name = "eventhub-route"
+    [string]$resource_group,
+    [string]$iot_hub_name,
+    [string]$iot_hub_endpoint_name,
+    [string]$iot_hub_route_name,
+    [string]$storage_account_name,
+    [string]$container_name
 )
 {
     $connection_string = az storage account show-connection-string `
         --resource-group $resource_group `
         --name $storage_account_name `
         --query 'connectionString' -o tsv
+
+    if (!$subscription_id)
+    {
+        $subscription_id = az account show --query id -o tsv
+    }
 
     az iot hub routing-endpoint create `
         --resource-group $resource_group `
@@ -301,14 +388,14 @@ function New-IoTStoragePipeline(
 
 function New-IoTEventHubPipeline(
     [string]$subscription_id,
-    [string]$resource_group = "IoTEdgeDataStreaming",
-    [string]$iot_hub_name = "TelemetryIoTHub",
-    [string]$namespace = "iottelemetrydatahub",
-    [string]$hub_name = "telemetrydata",
-    [string]$policy_name = $policy_name,
+    [string]$resource_group,
+    [string]$iot_hub_name,
+    [string]$namespace,
+    [string]$hub_name,
+    [string]$policy_name,
     [string]$partition_count = 4, # 2 - 32
-    [string]$iot_hub_endpoint_name = "eventhub-endpoint",
-    [string]$iot_hub_route_name = "eventhub-route"
+    [string]$iot_hub_endpoint_name,
+    [string]$iot_hub_route_name
 )
 {
     az eventhubs eventhub create `
@@ -358,14 +445,14 @@ function New-IoTEventHubPipeline(
 
 function New-IoTServiceBusPipeline(
     [string]$subscription_id,
-    [string]$resource_group = "IoTEdgeDataStreaming",
-    [string]$iot_hub_name = "TelemetryIoTHub",
-    [string]$namespace = "iottelemetrydatasb",
-    [string]$queue_name = "telemetrydata",
-    [string]$policy_name = $policy_name,
-    [bool]$enable_partitioning = $true,
-    [string]$iot_hub_endpoint_name = "eventhub-endpoint",
-    [string]$iot_hub_route_name = "eventhub-route"
+    [string]$resource_group,
+    [string]$iot_hub_name,
+    [string]$namespace,
+    [string]$queue_name,
+    [string]$policy_name,
+    [bool]$enable_partitioning,
+    [string]$iot_hub_endpoint_name,
+    [string]$iot_hub_route_name
 )
 {
     az servicebus queue create `
@@ -436,8 +523,9 @@ function Get-EnvironmentHash(
 }
 
 function New-StreamAnalyticsEdgeJob(
-    [string]$location = "eastus",
-    [string]$resource_group = "IIoTRG",
+    [string]$location,
+    [string]$subscription_id,
+    [string]$resource_group,
     [string]$job_name,
     [string]$storage_name,
     [string]$storage_container,
@@ -452,6 +540,7 @@ function New-StreamAnalyticsEdgeJob(
         --query '[0].value' `
         -o tsv
 
+    #region request
     $request = @{
         "location" = $location
         "tags" = @{
@@ -517,7 +606,12 @@ function New-StreamAnalyticsEdgeJob(
             )
         }
     }
+    #endregion
 
+    if (!$subscription_id)
+    {
+        $subscription_id = az account show --query id -o tsv
+    }
     $token = az account get-access-token --resource-type arm --query accessToken -o tsv
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     $content = ConvertTo-Json -InputObject $request -Depth 8
@@ -546,68 +640,6 @@ function New-StreamAnalyticsEdgeJob(
         -Depth 15
 
     return $package
-}
-
-function New-StreamAnalyticsCloudJob(
-    [string]$location,
-    [string]$resource_group,
-    [string]$job_name,
-    [string]$input_name,
-    [string]$input_type = "Stream",
-    [Hashtable]$input_datasource,
-    [Hashtable]$input_serialization,
-    [string]$output_name,
-    [Hashtable]$output_datasource,
-    [Hashtable]$output_serialization,
-    [string]$query
-)
-{
-    # create job
-    az stream-analytics job create `
-        --resource-group $resource_group `
-        --name $job_name `
-        --location $location `
-        --compatibility-level 1.2 `
-        --output-error-policy "Drop" `
-        --events-outoforder-policy "Drop" `
-        --events-outoforder-max-delay 5 `
-        --events-late-arrival-max-delay 16 `
-        --data-locale "en-US"
-
-    # create job input
-    Convertto-Json -InputObject $input_datasource | Set-Content ./input-datasource.json
-    Convertto-Json -InputObject $input_serialization | Set-Content ./input-serialization.json
-
-    az stream-analytics input create `
-        --resource-group $resource_group `
-        --job-name $job_name `
-        --name $input_name `
-        --type $input_type `
-        --datasource input-datasource.json `
-        --serialization input-serialization.json
-    
-    # create job output
-    Convertto-Json -InputObject $output_datasource | Set-Content -Path ./output-datasource.json
-    Convertto-Json -InputObject $output_serialization | Set-Content ./output-serialization.json
-
-    az stream-analytics output create `
-        --resource-group $resource_group `
-        --job-name $job_name `
-        --name $output_name `
-        --datasource ./output-datasource.json `
-        --serialization ./output-serialization.json
-
-    # create transformation
-    az stream-analytics transformation create `
-        --resource-group $resource_group `
-        --job-name $job_name `
-        --name Transformation `
-        --transformation-query $query
-    
-    # Start ASA job
-    az stream-analytics job start `
-        --resource-group $resource_group `
-        --name $job_name
 }
 
 function New-CosmosDBSQLAccount(

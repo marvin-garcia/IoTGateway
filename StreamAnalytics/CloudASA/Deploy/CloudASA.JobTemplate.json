@@ -131,6 +131,21 @@
     },
     "Output_cosmosdb_documentId": {
       "type": "string"
+    },
+    "Output_NotificationsEventHub_serviceBusNamespace": {
+      "type": "string"
+    },
+    "Output_NotificationsEventHub_eventHubName": {
+      "type": "string"
+    },
+    "Output_NotificationsEventHub_partitionKey": {
+      "type": "string"
+    },
+    "Output_NotificationsEventHub_sharedAccessPolicyName": {
+      "type": "string"
+    },
+    "Output_NotificationsEventHub_sharedAccessPolicyKey": {
+      "type": "string"
     }
   },
   "resources": [
@@ -156,7 +171,7 @@
           "name": "Transformation",
           "properties": {
             "streamingUnits": "[parameters('StreamingUnits')]",
-            "query": "SELECT\r\n\t*\r\nINTO\r\n\tiothub\r\nFROM\r\n\tcosmosdb"
+            "query": "-- WITH stdev AS\r\n-- (\r\n--     SELECT\r\n--         System.Timestamp() as Timestamp,\r\n--         NodeId,\r\n--         ApplicationUri,\r\n--         IoTHub.ConnectionDeviceId AS ConnectionDeviceId,\r\n--         STDEV(DipData) AS DipStdev\r\n--     FROM iothub TIMESTAMP BY Timestamp\r\n--     WHERE DipData IS NOT NULL\r\n--     GROUP BY NodeId, ApplicationUri, IoTHub.ConnectionDeviceId, TumblingWindow(minute, 3)\r\n-- )\r\n\r\nSELECT\r\n    System.Timestamp() as Timestamp,\r\n    GetMetadataPropertyValue(iothub, 'EventId') AS id,\r\n    NodeId,\r\n    ApplicationUri,\r\n    DipData,\r\n    AVG(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipAvg,\r\n    MAX(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipMax,\r\n    MIN(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipMin,\r\n    COUNT(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is NOT NULL) AS DipCount,\r\n    SpikeData,\r\n    AVG(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeAvg,\r\n    MAX(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeMax,\r\n    MIN(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeMin,\r\n    COUNT(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is NOT NULL) AS SpikeCount,\r\n    PositiveTrendData,\r\n    AVG(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendAvg,\r\n    MAX(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendMax,\r\n    MIN(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendMin,\r\n    COUNT(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is NOT NULL) AS PositiveTrendCount,\r\n    NegativeTrendData,\r\n    AVG(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendAvg,\r\n    MAX(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendMax,\r\n    MIN(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendMin,\r\n    COUNT(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is NOT NULL) AS NegativeTrendCount,\r\n    RandomSignedInt32,\r\n    AVG(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedAvg,\r\n    MAX(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedMax,\r\n    MIN(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedMin,\r\n    COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedCount,\r\n    -- Standard deviations\r\n    stdev.DipStdev\r\nINTO cosmosdb\r\nFROM iothub --TIMESTAMP BY Timestamp\r\n-- JOIN StDev TIMESTAMP BY Timestamp\r\n-- ON iothub.IoTHub.ConnectionDeviceId = stdev.ConnectionDeviceId \r\n-- AND iothub.ApplicationUri = stdev.ApplicationUri\r\n-- AND DATEDIFF(minute, iothub, Stdev) BETWEEN 1 AND 3\r\n"
           }
         },
         "inputs": [
@@ -199,6 +214,28 @@
                   "collectionNamePattern": "[parameters('Output_cosmosdb_collectionNamePattern')]",
                   "partitionKey": null,
                   "documentId": "[parameters('Output_cosmosdb_documentId')]"
+                }
+              }
+            }
+          },
+          {
+            "name": "NotificationsEventHub",
+            "properties": {
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
+                }
+              },
+              "datasource": {
+                "type": "Microsoft.ServiceBus/EventHub",
+                "properties": {
+                  "serviceBusNamespace": "[parameters('Output_NotificationsEventHub_serviceBusNamespace')]",
+                  "eventHubName": "[parameters('Output_NotificationsEventHub_eventHubName')]",
+                  "partitionKey": "[parameters('Output_NotificationsEventHub_partitionKey')]",
+                  "sharedAccessPolicyName": "[parameters('Output_NotificationsEventHub_sharedAccessPolicyName')]",
+                  "sharedAccessPolicyKey": "[parameters('Output_NotificationsEventHub_sharedAccessPolicyKey')]"
                 }
               }
             }

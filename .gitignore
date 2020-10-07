@@ -363,3 +363,6 @@ EdgeSolution/modules/OPC/layered.deployment.json
 **/LocalRunOutputs/
 StreamAnalytics/**/Inputs/*.json
 StreamAnalytics/**/Outputs/*.json
+params.json
+StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.parameters.json
+StreamAnalytics/CloudASA/Deploy/params.json
