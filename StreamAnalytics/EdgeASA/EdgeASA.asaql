@@ -1,0 +1,31 @@
+WITH AnomalyDetectionStep AS
+(
+	SELECT *,
+		/* DipData */
+        CAST(DipData AS float) AS Dip,
+        AnomalyDetection_SpikeAndDip(CAST(Dip AS float), 90, 120, 'spikesanddips')
+			OVER(LIMIT DURATION(second, 120)) AS DipScores,
+		/* SpikeData */
+		CAST(SpikeData AS float) AS Spike,
+		AnomalyDetection_SpikeAndDip(CAST(Spike AS float), 90, 120, 'spikesanddips')
+			OVER(LIMIT DURATION(second, 120)) AS SpikeScores
+    FROM streaminput
+)
+SELECT
+	NodeId,
+	ApplicationUri,
+	SourceTimestamp,
+    CAST(GetRecordPropertyValue(DipScores, 'Score') AS float) AS
+    DipScore,
+    CAST(GetRecordPropertyValue(DipScores, 'IsAnomaly') AS bigint) AS
+	DipAnomaly,
+	CAST(GetRecordPropertyValue(SpikeScores, 'Score') AS float) AS
+    SpikeScore,
+    CAST(GetRecordPropertyValue(SpikeScores, 'IsAnomaly') AS bigint) AS
+    SpikeAnomaly
+INTO alertsoutput
+FROM streaminput
+
+SELECT *
+INTO telemetryoutput
+FROM streaminput

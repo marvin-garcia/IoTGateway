@@ -224,6 +224,8 @@ function New-IIoTEnvironment(
     #endregion
 
     #region stream analytics
+
+    #region cloud job
     $asa_name = "asa-$($env_hash)"
     $asa_consumer_group = "streamanalytics"
     $asa_policy_name = "streamanalytics"
@@ -283,15 +285,14 @@ function New-IIoTEnvironment(
         --mode Incremental `
         --template-file StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.json `
         --parameters StreamAnalytics/CloudASA/Deploy/params.json
+    #endregion
 
     #region stream analytics edge
     $asa_edge_name = "asa-edge-$($env_hash)"
     $asa_edge_storage_name = "asaedgestorage$($env_hash)"
     $asa_edge_container_name = "edgeanomaly"
-    $asa_edge_input_name = "edgeinput"
-    $asa_edge_output_name = "edgeoutput"
-    $asa_edge_query = "SELECT * INTO $($asa_edge_output_name) FROM $($asa_edge_input_name) WHERE DipData>100"
 
+    # create storage account to publish job
     az storage account create `
         --location $location `
         --resource-group $resource_group `
@@ -300,15 +301,50 @@ function New-IIoTEnvironment(
         --kind StorageV2 `
         --sku Standard_LRS
 
-    $edge_package = New-StreamAnalyticsEdgeJob `
+    # retrieve storage key
+    $asa_edge_storage_key = az storage account keys list `
+        --resource-group $resource_group `
+        --account-name $asa_edge_storage_name `
+        --query '[0].value' `
+        -o tsv
+
+    [Array]$input_files = ((Get-Content ./StreamAnalytics/EdgeASA/asaproj.json `
+        | ConvertFrom-Json).configurations | `
+        ? { $_.subType -eq "Input" -and $_.filePath -notlike "*iothub.json" }).filePath
+    [Array]$asa_edge_input_names = @()
+    foreach ($file in $input_files)
+    {
+        $asa_edge_input_names += $file.Split('/')[1].Split('.')[0]
+    }
+
+    [Array]$output_files = ((Get-Content ./StreamAnalytics/EdgeASA/asaproj.json `
+        | ConvertFrom-Json).configurations | `
+        ? { $_.subType -eq "Output" }).filePath
+    [Array]$asa_edge_output_names = @()
+    foreach ($file in $output_files)
+    {
+        $asa_edge_output_names += $file.Split('/')[1].Split('.')[0]
+    }
+    
+    # read edge job query
+    $asa_edge_query = Get-Content -Path StreamAnalytics/EdgeASA/EdgeASA.asaql -Raw
+
+    # create edge job
+    $edge_create = New-StreamAnalyticsEdgeJob `
         -location $location `
         -resource_group $resource_group `
         -job_name $asa_edge_name `
         -storage_name $asa_edge_storage_name `
+        -storage_key $asa_edge_storage_key `
         -storage_container $asa_edge_container_name `
-        -input_name $asa_edge_input_name `
-        -output_name $asa_edge_output_name `
+        -input_name $asa_edge_input_names `
+        -output_name $asa_edge_output_names `
         -query $asa_edge_query
+    
+    # publish edge job
+    $edge_package = Publish-StreamAnalyticsEdgeJob `
+        -resource_group $resource_group `
+        -job_name $asa_edge_name
     #endregion
 
     #region Edge deployment
@@ -319,8 +355,8 @@ function New-IIoTEnvironment(
     } | Set-Content -Path EdgeSolution/modules/OPC/layered.deployment.json
 
     # Create OPC layered deployment
-    $opc_deployment_name = "opc"
-    $priority = 6
+    $opc_deployment_name = "opcsim"
+    $priority = 9
     az iot edge deployment create `
         --layered `
         -d "$opc_deployment_name-$priority" `
@@ -528,18 +564,13 @@ function New-StreamAnalyticsEdgeJob(
     [string]$resource_group,
     [string]$job_name,
     [string]$storage_name,
+    [string]$storage_key,
     [string]$storage_container,
-    [string]$input_name,
-    [string]$output_name,
+    [Array]$input_names,
+    [Array]$output_names,
     [string]$query
 )
 {
-    $storage_key = az storage account keys list `
-        --resource-group $resource_group `
-        --account-name $storage_name `
-        --query '[0].value' `
-        -o tsv
-
     #region request
     $request = @{
         "location" = $location
@@ -556,25 +587,7 @@ function New-StreamAnalyticsEdgeJob(
             }
             "eventsLateArrivalMaxDelayInSeconds" = 1
             "jobType" = "edge"
-            "inputs" = @(
-                @{
-                    "name" = $input_name
-                    "properties" = @{
-                        "type" = "stream"
-                        "serialization" = @{
-                            "type" = "JSON"
-                            "properties" = @{
-                                "encoding" = "UTF8"
-                            }
-                        }
-                        "datasource" = @{
-                            "type" = "GatewayMessageBus"
-                            "properties" = @{}
-                        }
-                    }
-                }
-            )
-            "transformation" = @{
+            "transformation" = @{
                 "name" = "edgequery"
                 "properties" = @{
                     "query" = $query
@@ -587,23 +600,47 @@ function New-StreamAnalyticsEdgeJob(
                 }
                 "container" = $storage_container
             }
-            "outputs" = @(
-                @{
-                    "name" = $output_name
+            "inputs" = @()
+            "outputs" = @()
+        }
+    }
+
+    foreach ($input_name in $input_names)
+    {
+        $request.properties.inputs += @{
+            "name" = $input_name
+            "properties" = @{
+                "type" = "stream"
+                "serialization" = @{
+                    "type" = "JSON"
                     "properties" = @{
-                        "serialization" = @{
-                            "type" = "JSON"
-                            "properties" = @{
-                                "encoding" = "UTF8"
-                            }
-                        }
-                        "datasource" = @{
-                            "type" = "GatewayMessageBus"
-                            "properties" = @{}
-                        }
+                        "encoding" = "UTF8"
                     }
                 }
-            )
+                "datasource" = @{
+                    "type" = "GatewayMessageBus"
+                    "properties" = @{}
+                }
+            }
+        }
+    }
+
+    foreach ($output_name in $output_names)
+    {
+        $request.properties.outputs += @{
+            "name" = $output_name
+            "properties" = @{
+                "serialization" = @{
+                    "type" = "JSON"
+                    "properties" = @{
+                        "encoding" = "UTF8"
+                    }
+                }
+                "datasource" = @{
+                    "type" = "GatewayMessageBus"
+                    "properties" = @{}
+                }
+            }
         }
     }
     #endregion
@@ -615,6 +652,7 @@ function New-StreamAnalyticsEdgeJob(
     $token = az account get-access-token --resource-type arm --query accessToken -o tsv
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     $content = ConvertTo-Json -InputObject $request -Depth 8
+    Write-Host $content
     $create_uri = "https://management.azure.com/subscriptions/$($subscription_id)/resourcegroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)?api-version=2017-04-01-preview"
     $create_response = Invoke-RestMethod $create_uri `
         -Method PUT `
@@ -622,6 +660,21 @@ function New-StreamAnalyticsEdgeJob(
         -ContentType "application/json" `
         -Authentication Bearer -Token $secure_token
 
+    return $create_response
+}
+
+function Publish-StreamAnalyticsEdgeJob(
+    [string]$subscription_id,
+    [string]$resource_group,
+    [string]$job_name
+)
+{
+    if (!$subscription_id)
+    {
+        $subscription_id = az account show --query id -o tsv
+    }
+    $token = az account get-access-token --resource-type arm --query accessToken -o tsv
+    $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     $publish_uri = "https://management.azure.com/subscriptions/$($subscription_id)/resourceGroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)/publishedgepackage?api-version=2017-04-01-preview"
     $publish_response = Invoke-WebRequest $publish_uri `
         -Method POST `

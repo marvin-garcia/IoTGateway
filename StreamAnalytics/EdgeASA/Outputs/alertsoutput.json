@@ -1,0 +1,9 @@
+{
+    "Name": "alertsoutput",
+    "DataSourceType": "GatewayMessageBus",
+    "Serialization": {
+        "Type": "Json",
+        "Encoding": "UTF8"
+    },
+    "ScriptType": "Output"
+}
