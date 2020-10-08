@@ -32,7 +32,7 @@
               "createOptions": "{\"Env\":[\"DefaultApplicationUri=OpcPlc\",\"NodeIdRegex=#[is]=([a-zA-Z0-9_.]+)\",\"ApplicationUriRegex=(.*)\"]}"
             }
           },
-          "anomalyDetection": {
+          "streamAnalytics": {
             "type": "docker",
             "status": "running",
             "restartPolicy": "always",
@@ -47,12 +47,11 @@
       "$edgeHub": {
         "properties.desired.routes": {
           "PublisherToTranslator": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/opcToDtdl/inputs/opc\")",
-          "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream",
-          "TranslatorToAnomalyDetection": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO BrokeredEndpoint(\"modules/anomalyDetection/input/__ASA_INPUT_NAME__\")",
-          "AnomalyDetectionToHub": "FROM /messages/modules/anomalyDetection/outputs/* INTO $upstream"
+          "TranslatorToStreamAnalytics": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO BrokeredEndpoint(\"modules/streamAnalytics/input/__ASA_INPUT_NAME__\")",
+          "StreamAnalyticsToHub": "FROM /messages/modules/streamAnalytics/outputs/* INTO $upstream"
         }
       },
-      "anomalyDetection": {
+      "streamAnalytics": {
         "properties.desired": __ASA_DESIRED_PROPERTIES__
       }
     }

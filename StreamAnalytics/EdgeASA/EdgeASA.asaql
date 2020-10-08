@@ -1,30 +1,36 @@
-WITH AnomalyDetectionStep AS
+WITH AnomalyDetection AS
 (
-	SELECT *,
+	SELECT 
+		NodeId,
+		ApplicationUri,
+		IoTHub.ConnectionDeviceId,
+		System.Timestamp() AS SourceTimestamp,
 		/* DipData */
-        CAST(DipData AS float) AS Dip,
-        AnomalyDetection_SpikeAndDip(CAST(Dip AS float), 90, 120, 'spikesanddips')
+        DipData,
+        AnomalyDetection_SpikeAndDip(DipData, 90, 120, 'spikesanddips')
 			OVER(LIMIT DURATION(second, 120)) AS DipScores,
 		/* SpikeData */
-		CAST(SpikeData AS float) AS Spike,
-		AnomalyDetection_SpikeAndDip(CAST(Spike AS float), 90, 120, 'spikesanddips')
+		SpikeData,
+		AnomalyDetection_SpikeAndDip(SpikeData, 90, 120, 'spikesanddips')
 			OVER(LIMIT DURATION(second, 120)) AS SpikeScores
     FROM streaminput
 )
 SELECT
 	NodeId,
 	ApplicationUri,
+	ConnectionDeviceId,
 	SourceTimestamp,
-    CAST(GetRecordPropertyValue(DipScores, 'Score') AS float) AS
-    DipScore,
-    CAST(GetRecordPropertyValue(DipScores, 'IsAnomaly') AS bigint) AS
-	DipAnomaly,
-	CAST(GetRecordPropertyValue(SpikeScores, 'Score') AS float) AS
-    SpikeScore,
-    CAST(GetRecordPropertyValue(SpikeScores, 'IsAnomaly') AS bigint) AS
-    SpikeAnomaly
+	DipData,
+	CAST(GetRecordPropertyValue(DipScores, 'Score') AS float) AS DipScore,
+	CAST(GetRecordPropertyValue(DipScores, 'IsAnomaly') AS bigint) AS IsDipAnomaly,
+	SpikeData,
+	CAST(GetRecordPropertyValue(SpikeScores, 'Score') AS float) AS SpikeScore,
+    CAST(GetRecordPropertyValue(SpikeScores, 'IsAnomaly') AS bigint) AS IsSpikeAnomaly
 INTO alertsoutput
-FROM streaminput
+FROM AnomalyDetection
+WHERE 
+	CAST(GetRecordPropertyValue(DipScores, 'IsAnomaly') AS bigint) > 0
+	OR CAST(GetRecordPropertyValue(SpikeScores, 'IsAnomaly') AS bigint) > 0
 
 SELECT *
 INTO telemetryoutput

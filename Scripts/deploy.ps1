@@ -347,6 +347,8 @@ function New-IIoTEnvironment(
         -job_name $asa_edge_name
     #endregion
 
+    #endregion
+
     #region Edge deployment
     (Get-Content -Path EdgeSolution/modules/OPC/layered.deployment.template.json -Raw) | ForEach-Object {
         $_ -replace '__ASA_ENV__', (ConvertTo-Json -InputObject $edge_package.env -Depth 10) `
@@ -356,7 +358,7 @@ function New-IIoTEnvironment(
 
     # Create OPC layered deployment
     $opc_deployment_name = "opcsim"
-    $priority = 9
+    $priority = 1
     az iot edge deployment create `
         --layered `
         -d "$opc_deployment_name-$priority" `

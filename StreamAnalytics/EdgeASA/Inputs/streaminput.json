@@ -6,5 +6,6 @@
         "Type": "Json",
         "Encoding": "UTF8"
     },
-    "ScriptType": "Input"
+    "ScriptType": "Input",
+    "PartitionKey": null
 }
