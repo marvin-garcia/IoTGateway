@@ -1,0 +1,20 @@
+{
+    "Name": "alertshub",
+    "DataSourceType": "Event Hub",
+    "EventHubProperties": {
+        "ServiceBusNamespace": "[Required]",
+        "EventHubName": "[Required]",
+        "SharedAccessPolicyName": "[Required]",
+        "SharedAccessPolicyKey": null,
+        "PartitionKey": "",
+        "PropertyColumns": []
+    },
+    "DataSourceCredentialDomain": null,
+    "Serialization": {
+        "Type": "Json",
+        "Encoding": "UTF8",
+        "FieldDelimiter": null,
+        "Format": "LineSeparated"
+    },
+    "ScriptType": "Output"
+}

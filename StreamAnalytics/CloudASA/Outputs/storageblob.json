@@ -1,0 +1,25 @@
+{
+    "Name": "storageblob",
+    "DataSourceType": "Blob Storage",
+    "BlobStorageProperties": {
+        "StorageAccounts": [
+            {
+                "AccountName": "telemetrystoragevabsaeca",
+                "AccountKey": null
+            }
+        ],
+        "Container": "telemetry",
+        "PathPattern": "",
+        "DateFormat": "yyyy/MM/dd",
+        "TimeFormat": "HH",
+        "AuthenticationMode": "ConnectionString"
+    },
+    "DataSourceCredentialDomain": "1c5e34e6-659c-45e5-826d-62467a36492f.StreamAnalystics",
+    "Serialization": {
+        "Type": "Json",
+        "Encoding": "UTF8",
+        "FieldDelimiter": null,
+        "Format": "LineSeparated"
+    },
+    "ScriptType": "Output"
+}

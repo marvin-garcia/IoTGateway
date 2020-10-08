@@ -11,11 +11,15 @@
             "subType": "Input"
         },
         {
-            "filePath": "Outputs/cosmosdb.json",
+            "filePath": "Outputs/storageblob.json",
             "subType": "Output"
         },
         {
-            "filePath": "Outputs/NotificationsEventHub.json",
+            "filePath": "Outputs/notificationshub.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/alertshub.json",
             "subType": "Output"
         }
     ]

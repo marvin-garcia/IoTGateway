@@ -86,27 +86,56 @@ function New-IIoTEnvironment(
         --target-condition=$deployment_condition
     #endregion
 
-    #region Database
-    $cosmos_account_name = "cosmos-$($env_hash)"
-    $database_name = "iiotdb"
-    $container_name = "telemetry"
-    $container_partition_key = "/NodeId"
-    $ttl_days = 7
-
-    New-CosmosDBSQLAccount `
-        -location $location `
-        -resource_group $resource_group `
-        -account_name $cosmos_account_name `
-        -database_name $database_name `
-        -container_name $container_name `
-        -partition_key $container_partition_key `
-        -ttl_days = $ttl_days
+    #region permanent storage
     
-    $cosmos_key = az cosmosdb keys list `
+    #region cosmos DB
+    # $cosmos_account_name = "cosmos-$($env_hash)"
+    # $database_name = "iiotdb"
+    # $container_name = "telemetry"
+    # $container_partition_key = "/NodeId"
+    # $ttl_days = 7
+
+    # New-CosmosDBSQLAccount `
+    #     -location $location `
+    #     -resource_group $resource_group `
+    #     -account_name $cosmos_account_name `
+    #     -database_name $database_name `
+    #     -container_name $container_name `
+    #     -partition_key $container_partition_key `
+    #     -ttl_days = $ttl_days
+    
+    # $cosmos_key = az cosmosdb keys list `
+    #     --resource-group $resource_group `
+    #     --name $cosmos_account_name `
+    #     --query primaryMasterKey `
+    #     -o tsv
+    #endregion
+
+    #region storage blob
+    $persistent_storage_name = "telemetrystrg$($env_hash)"
+    $persistent_storage_container = "telemetry"
+
+    az storage account create `
+        --location $location `
         --resource-group $resource_group `
-        --name $cosmos_account_name `
-        --query primaryMasterKey `
+        --name $persistent_storage_name `
+        --access-tier Hot `
+        --kind StorageV2 `
+        --sku Standard_LRS
+
+    $persistent_storage_key = az storage account keys list `
+        --resource-group $resource_group `
+        --account-name $persistent_storage_name `
+        --query '[0].value' `
         -o tsv
+    
+    az storage container create `
+        --resource-group $resource_group `
+        --account-name $persistent_storage_name `
+        --account-key $persistent_storage_key `
+        --name $persistent_storage_container
+    #endregion
+    
     #endregion
 
     #region event hubs
@@ -265,16 +294,23 @@ function New-IIoTEnvironment(
         "Input_iothub_endpoint" = @{ "value" = "messages/events" }
         "Input_iothub_sharedAccessPolicyName" = @{ "value" = $asa_policy_name }
         "Input_iothub_sharedAccessPolicyKey" = @{ "value" = $policy_shared_key }
-        "Output_cosmosdb_accountId" = @{ "value" = $cosmos_account_name }
-        "Output_cosmosdb_accountKey" = @{ "value" = $cosmos_key }
-        "Output_cosmosdb_database" = @{ "value" = $database_name }
-        "Output_cosmosdb_collectionNamePattern" = @{ "value" = $container_name }
-        "Output_cosmosdb_documentId" = @{ "value" = "id" }
-        "Output_NotificationsEventHub_serviceBusNamespace" = @{ "value" = $eh_name }
-        "Output_NotificationsEventHub_eventHubName" = @{ "value" = $eh_notifications_name }
-        "Output_NotificationsEventHub_partitionKey" = @{ "value" = "" }
-        "Output_NotificationsEventHub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
-        "Output_NotificationsEventHub_sharedAccessPolicyKey" = @{ "value" = $eh_notifications_send_key }
+        "Output_storageblob_Storage1_accountName" = @{ "value" = $persistent_storage_name }
+        "Output_storageblob_Storage1_accountKey" = @{ "value" = $persistent_storage_key }
+        "Output_storageblob_container" = @{ "value" = $persistent_storage_container }
+        "Output_storageblob_pathPattern" = @{ "value" = "" }
+        "Output_storageblob_dateFormat" = @{ "value" = "yyyy/MM/dd" }
+        "Output_storageblob_timeFormat" = @{ "value" = "HH" }
+        "Output_storageblob_authenticationMode" = @{ "value" = "ConnectionString" }
+        "Output_notificationshub_serviceBusNamespace" = @{ "value" = $eh_name }
+        "Output_notificationshub_eventHubName" = @{ "value" = $eh_notifications_name }
+        "Output_notificationshub_partitionKey" = @{ "value" = "" }
+        "Output_notificationshub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
+        "Output_notificationshub_sharedAccessPolicyKey" = @{ "value" = $eh_notifications_send_key }
+        "Output_alertshub_serviceBusNamespace" = @{ "value" = $eh_name }
+        "Output_alertshub_eventHubName" = @{ "value" = $eh_alerts_name }
+        "Output_alertshub_partitionKey" = @{ "value" = "" }
+        "Output_alertshub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
+        "Output_alertshub_sharedAccessPolicyKey" = @{ "value" = $eh_alerts_send_key }
     }
     Set-Content -Value (ConvertTo-Json $asa_parameters) -Path StreamAnalytics/CloudASA/Deploy/params.json
 
@@ -300,6 +336,12 @@ function New-IIoTEnvironment(
         --access-tier Cool `
         --kind StorageV2 `
         --sku Standard_LRS
+
+    # create storage container
+    az storage container create `
+        --resource-group $resource_group `
+        --account-name $asa_edge_storage_name `
+        --name $asa_edge_container_name
 
     # retrieve storage key
     $asa_edge_storage_key = az storage account keys list `
