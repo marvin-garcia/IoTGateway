@@ -297,7 +297,7 @@ function New-IIoTEnvironment(
         "Output_storageblob_Storage1_accountName" = @{ "value" = $persistent_storage_name }
         "Output_storageblob_Storage1_accountKey" = @{ "value" = $persistent_storage_key }
         "Output_storageblob_container" = @{ "value" = $persistent_storage_container }
-        "Output_storageblob_pathPattern" = @{ "value" = "" }
+        "Output_storageblob_pathPattern" = @{ "value" = "{ConnectionDeviceId}/{datetime:yyyy}/{datetime:MM}/{datetime:dd}/{datetime:HH}/{datetime:mm}" }
         "Output_storageblob_dateFormat" = @{ "value" = "yyyy/MM/dd" }
         "Output_storageblob_timeFormat" = @{ "value" = "HH" }
         "Output_storageblob_authenticationMode" = @{ "value" = "ConnectionString" }
@@ -337,18 +337,19 @@ function New-IIoTEnvironment(
         --kind StorageV2 `
         --sku Standard_LRS
 
-    # create storage container
-    az storage container create `
-        --resource-group $resource_group `
-        --account-name $asa_edge_storage_name `
-        --name $asa_edge_container_name
-
     # retrieve storage key
     $asa_edge_storage_key = az storage account keys list `
         --resource-group $resource_group `
         --account-name $asa_edge_storage_name `
         --query '[0].value' `
         -o tsv
+
+    # create storage container
+    az storage container create `
+        --resource-group $resource_group `
+        --account-name $asa_edge_storage_name `
+        --account-key $asa_edge_storage_key `
+        --name $asa_edge_container_name
 
     [Array]$input_files = ((Get-Content ./StreamAnalytics/EdgeASA/asaproj.json `
         | ConvertFrom-Json).configurations | `

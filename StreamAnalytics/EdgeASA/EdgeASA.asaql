@@ -3,7 +3,7 @@ WITH AnomalyDetection AS
 	SELECT 
 		NodeId,
 		ApplicationUri,
-		IoTHub.ConnectionDeviceId,
+		IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
 		System.Timestamp() AS SourceTimestamp,
 		/* DipData */
         DipData,
@@ -20,6 +20,7 @@ SELECT
 	ApplicationUri,
 	ConnectionDeviceId,
 	SourceTimestamp,
+	CAST(1 AS bigint) AS IsAlert,
 	DipData,
 	CAST(GetRecordPropertyValue(DipScores, 'Score') AS float) AS DipScore,
 	CAST(GetRecordPropertyValue(DipScores, 'IsAnomaly') AS bigint) AS IsDipAnomaly,

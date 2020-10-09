@@ -1,6 +1,6 @@
 SELECT
     GetMetadataPropertyValue(iothub, 'EventId') AS id,
-    SourceTimestamp,
+    System.Timestamp() AS SourceTimestamp,
     NodeId,
     ApplicationUri,
     iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
@@ -36,3 +36,13 @@ SELECT
     COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is NOT NULL) AS RandomSignedCount
 INTO storageblob
 FROM iothub
+
+SELECT *
+INTO notificationshub
+FROM iothub
+WHERE AlternatingBoolean = 1
+
+SELECT *
+INTO alertshub
+FROM iothub
+WHERE IsAlert > 0
