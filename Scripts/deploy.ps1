@@ -417,7 +417,7 @@ function New-IIoTEnvironment(
 
     #region notification
 
-    # create event grid topic
+    #region event grid topic
     $notifications_topic_name = "eg-notifications-$($env_hash)"
     $notifications_subscription_name = "notifications"
 
@@ -451,8 +451,6 @@ function New-IIoTEnvironment(
     #endregion
 
     #region logic app
-
-    #endregion
     $notifications_app_name = "NotificationsApp"
     $notifications_app_parameters = @{
         "logicAppName" = @{ "value" = $notifications_app_name }
@@ -473,6 +471,66 @@ function New-IIoTEnvironment(
         --mode Incremental `
         --template-file ./LogicApps/NotificationsApp/LogicApp.json `
         --parameters ./LogicApps/NotificationsApp/LogicApp.parameters.json
+    #endregion
+
+    #endregion
+
+    #region alerting
+
+    #region event grid topic
+    $alerts_topic_name = "eg-alerts-$($env_hash)"
+    $alerts_subscription_name = "alerts"
+
+    az eventgrid topic create `
+        --location $location `
+        --resource-group $resource_group `
+        --name $alerts_topic_name
+
+    $alerts_topic_id = az eventgrid topic show `
+        --resource-group $resource_group `
+        --name $alerts_topic_name `
+        --query id -o tsv
+
+    $alerts_topic_endpoint = az eventgrid topic show `
+        --resource-group $resource_group `
+        --name $alerts_topic_name `
+        --query endpoint -o tsv
+
+    $alerts_topic_key = az eventgrid topic key list `
+        --resource-group $resource_group `
+        --name $alerts_topic_name `
+        --query key1 `
+        -o tsv
+
+    az eventgrid event-subscription create `
+        --source-resource-id $alerts_topic_id `
+        --endpoint $alerts_webhook `
+        --name $alerts_subscription_name
+    
+    Write-Host -ForegroundColor Yellow "`r`n`r`nMake sure you use the Validation URL to enable the subscription for endpoint $alerts_webhook."
+    #endregion
+
+    #region logic app
+    $alerts_app_name = "AlertsApp"
+    $alerts_app_parameters = @{
+        "logicAppName" = @{ "value" = $alerts_app_name }
+        "azureeventgridpublish_1_Connection_Name" = @{ "value" = "alertseventgrid" }
+        "azureeventgridpublish_1_Connection_DisplayName" = @{ "value" = "alertseventgridconnection" }
+        "azureeventgridpublish_1_endpoint" = @{ "value" = $alerts_topic_endpoint }
+        "azureeventgridpublish_1_api_key" = @{ "value" = $alerts_topic_key }
+        "eventhubs_1_Connection_DisplayName" = @{ "value" = "alertseventhubconnection" }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_alerts_listen_connectionstring }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_consumer_group }
+        "eventhubs_1_Path" = @{ "value" = "/@{encodeURIComponent('$eh_alerts_name')}/events/batch/head" }
+    }
+    Set-Content -Path ./LogicApps/AlertsApp/LogicApp.parameters.json -Value (ConvertTo-Json $alerts_app_parameters)
+
+    az deployment group create `
+        --resource-group $resource_group `
+        --name $alerts_app_name `
+        --mode Incremental `
+        --template-file ./LogicApps/AlertsApp/LogicApp.json `
+        --parameters ./LogicApps/AlertsApp/LogicApp.parameters.json
     #endregion
 
     #endregion
