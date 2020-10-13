@@ -1,0 +1,368 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logicAppName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "metadata": {
+        "description": "Name of the Logic App."
+      }
+    },
+    "logicAppLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "allowedValues": [
+        "[resourceGroup().location]",
+        "eastasia",
+        "southeastasia",
+        "centralus",
+        "eastus",
+        "eastus2",
+        "westus",
+        "northcentralus",
+        "southcentralus",
+        "northeurope",
+        "westeurope",
+        "japanwest",
+        "japaneast",
+        "brazilsouth",
+        "australiaeast",
+        "australiasoutheast",
+        "southindia",
+        "centralindia",
+        "westindia",
+        "canadacentral",
+        "canadaeast",
+        "uksouth",
+        "ukwest",
+        "westcentralus",
+        "westus2",
+        "koreacentral",
+        "koreasouth",
+        "francecentral",
+        "francesouth",
+        "uaecentral",
+        "southafricanorth",
+        "southafricawest",
+        "switzerlandnorth",
+        "germanynorth"
+      ],
+      "metadata": {
+        "description": "Location of the Logic App."
+      }
+    },
+    "eventhubs_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "eventhubs"
+    },
+    "eventhubs_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "WhenThereAreNewEvents"
+    },
+    "eventhubs_1_connectionString": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure Event Hubs Connection String"
+      }
+    },
+    "eventhubs_1_Consumer_Group": {
+      "type": "string",
+      "defaultValue": "$Default"
+    },
+    "eventhubs_1_Path": {
+      "type": "string"
+    },
+    "eventhubs_1_Recurrence_Frequency": {
+      "type": "string",
+      "defaultValue": "Minute",
+      "allowedValues": [
+        "Minute",
+        "Hour",
+        "Day"
+      ]
+    },
+    "eventhubs_1_Recurrence_Interval": {
+      "type": "int",
+      "defaultValue": 5
+    },
+    "azureeventgridpublish_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "eventgridconnection"
+    },
+    "azureeventgridpublish_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "PublishEventToEventGrid"
+    },
+    "azureeventgridpublish_1_endpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS endpoint for the application topic for events."
+      },
+      "defaultValue": "https://eg-alerts-vabsaeca.eastus-1.eventgrid.azure.net/api/events"
+    },
+    "azureeventgridpublish_1_api_key": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Primary or secondary key for the application topic."
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('logicAppName')]",
+      "type": "Microsoft.Logic/workflows",
+      "location": "[parameters('logicAppLocation')]",
+      "tags": {
+        "displayName": "LogicApp"
+      },
+      "apiVersion": "2016-06-01",
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "actions": {
+            "Initialize_variable": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "eventcontent",
+                    "type": "string",
+                    "value": "@base64ToString(triggerBody()?['ContentData'])"
+                  }
+                ]
+              },
+              "runAfter": {}
+            },
+            "Parse_JSON": {
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@variables('eventcontent')",
+                "schema": {
+                  "properties": {
+                    "ApplicationUri": {
+                      "type": "string"
+                    },
+                    "ConnectionDeviceId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "DipData": {
+                      "type": "number"
+                    },
+                    "DipScore": {
+                      "type": "number"
+                    },
+                    "IsAlert": {
+                      "type": "integer"
+                    },
+                    "IsDipAnomaly": {
+                      "type": "integer"
+                    },
+                    "IsSpikeAnomaly": {
+                      "type": "integer"
+                    },
+                    "NodeId": {
+                      "type": "string"
+                    },
+                    "SourceTimestamp": {
+                      "type": "string"
+                    },
+                    "SpikeData": {
+                      "type": "number"
+                    },
+                    "SpikeScore": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "runAfter": {
+                "Initialize_variable": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@body('Parse_JSON')?['isalert']",
+                      1
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Condition_2": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@body('Parse_JSON')?['isdipanomaly']",
+                          1
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Publish_Dip_Anomaly": {
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                          }
+                        },
+                        "method": "post",
+                        "body": [
+                          {
+                            "id": "@body('Parse_JSON')?['ApplicationUri']",
+                            "subject": "IoT Alert",
+                            "eventType": "Alert",
+                            "data": {
+                              "DipData": "@body('Parse_JSON')?['DipData']"
+                            },
+                            "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                          }
+                        ],
+                        "path": "/eventGrid/api/events"
+                      },
+                      "runAfter": {}
+                    }
+                  },
+                  "runAfter": {},
+                  "else": {
+                    "actions": {
+                      "Publish_Spike_Anomaly": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connection": {
+                              "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                            }
+                          },
+                          "method": "post",
+                          "body": [
+                            {
+                              "id": "@body('Parse_JSON')?['ApplicationUri']",
+                              "subject": "IoT Alert",
+                              "eventType": "Aler",
+                              "data": {
+                                "SpikeData": "@body('Parse_JSON')?['SpikeData']"
+                              },
+                              "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                            }
+                          ],
+                          "path": "/eventGrid/api/events"
+                        },
+                        "runAfter": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "When_events_are_available_in_Event_Hub": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['eventhubs']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "[parameters('eventhubs_1_Path')]",
+                "queries": {
+                  "contentType": "application/octet-stream",
+                  "consumerGroupName": "[parameters('eventhubs_1_Consumer_Group')]",
+                  "maximumEventsCount": 50
+                }
+              },
+              "recurrence": {
+                "frequency": "[parameters('eventhubs_1_Recurrence_Frequency')]",
+                "interval": "[parameters('eventhubs_1_Recurrence_Interval')]"
+              },
+              "splitOn": "@triggerBody()"
+            }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azureeventgridpublish": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
+              },
+              "eventhubs": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
+                "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
+      ]
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2018-07-01-preview",
+      "name": "[parameters('eventhubs_1_Connection_Name')]",
+      "location": "[parameters('logicAppLocation')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]"
+        },
+        "displayName": "[parameters('eventhubs_1_Connection_DisplayName')]",
+        "parameterValues": {
+          "connectionString": "[parameters('eventhubs_1_connectionString')]"
+        }
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2018-07-01-preview",
+      "name": "[parameters('azureeventgridpublish_1_Connection_Name')]",
+      "location": "[parameters('logicAppLocation')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]"
+        },
+        "displayName": "[parameters('azureeventgridpublish_1_Connection_DisplayName')]",
+        "parameterValues": {
+          "endpoint": "[parameters('azureeventgridpublish_1_endpoint')]",
+          "api_key": "[parameters('azureeventgridpublish_1_api_key')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
