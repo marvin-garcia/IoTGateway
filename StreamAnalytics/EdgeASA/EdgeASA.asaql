@@ -3,7 +3,6 @@ WITH AnomalyDetection AS
 	SELECT 
 		NodeId,
 		ApplicationUri,
-		IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
 		System.Timestamp() AS SourceTimestamp,
 		/* DipData */
         DipData,
@@ -18,7 +17,6 @@ WITH AnomalyDetection AS
 SELECT
 	NodeId,
 	ApplicationUri,
-	ConnectionDeviceId,
 	SourceTimestamp,
 	CAST(1 AS bigint) AS IsAlert,
 	DipData,
