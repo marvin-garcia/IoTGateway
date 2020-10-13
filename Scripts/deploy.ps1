@@ -541,15 +541,21 @@ function New-IIoTEnvironment(
     #region time series insight
     if ($deploy_time_series_insights)
     {
-        $tsi_name = "tsi-$($env_hash)"
+        $tsi_name = "tsi-opc-$($env_hash)"
         $tsi_policy_name = "timeseriesinsights"
         $tsi_consumer_group = "timeseriesinsights"
-        $tsi_env_name = "IIoT OPC Environment"
+        $tsi_storage_account = "tsistorage$($env_hash)"
 
         az iot hub consumer-group create `
             --resource-group $resource_group `
             --hub-name $iot_hub_name `
             --name $tsi_consumer_group
+
+        $iot_hub_id = az iot hub show `
+        --resource-group $resource_group `
+        --name $iot_hub_name `
+        --query id `
+        -o tsv
 
         # create iot hub policy
         az iot hub policy create `
@@ -557,26 +563,31 @@ function New-IIoTEnvironment(
             --name $tsi_policy_name `
             --permissions ServiceConnect
 
+        $tsi_policy_key = (az iot hub show-connection-string `
+            --hub-name $iot_hub_name `
+            --policy-name $tsi_policy_name `
+            --query 'connectionString' `
+            -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
+
+        
         $tsi_parameters = @{
-            "iotHubResourceGroup" = @{ "value" =  $resource_group }
-            "iotHubName" = @{ "value" =  $iot_hub_name }
-            "iotConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
+            "location" = @{ "value" =  $location }
+            "eventSourceName" = @{ "value" =  "iothub" }
+            "eventSourceResourceName" = @{ "value" =  $iot_hub_name }
+            "eventSourceResourceId" = @{ "value" = $iot_hub_id }
+            "eventSourceConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
+            "eventSourcePolicyName" = @{ "value" =  $tsi_policy_name }
+            "eventSourceSharedAccessKey" = @{ "value" = $tsi_policy_key }
             "environmentName" = @{ "value" =  $tsi_name }
-            "environmentDisplayName" = @{ "value" =  $tsi_env_name }
             "environmentSkuName" = @{ "value" =  "L1" }
             "environmentKind" = @{ "value" =  "LongTerm" }
             "environmentSkuCapacity" = @{ "value" =  1 }
             "environmentTimeSeriesIdProperties" = @{ "value" = @(
-                @{ "name" = "ConnectionDeviceId"; "type" = "string" }
+                # @{ "name" = "ConnectionDeviceId"; "type" = "string" }
                 @{ "name" = "ApplicationUri"; "type" = "string" }
             )}
-            "eventSourceName" = @{ "value" =  "iothub" }
-            "eventSourceDisplayName" = @{ "value" =  "IoT Hub" }
             "eventSourceTimestampPropertyName" = @{ "value" =  "SourceTimestamp" }
-            "eventSourceKeyName" = @{ "value" =  $tsi_policy_name }
-            "location" = @{ "value" =  $location }
-            "storageAccountType" = @{ "value" =  "Standard_LRS" }
-            "warmStoreDataRetention" = @{ "value" =  "PT7D" }
+            "storageAccountName" = @{ "value" =  $tsi_storage_account }
         }
         Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
 
