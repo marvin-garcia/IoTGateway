@@ -254,7 +254,7 @@
                             {
                               "id": "@body('Parse_JSON')?['ApplicationUri']",
                               "subject": "IoT Alert",
-                              "eventType": "Aler",
+                              "eventType": "Alert",
                               "data": {
                                 "SpikeData": "@body('Parse_JSON')?['SpikeData']"
                               },
