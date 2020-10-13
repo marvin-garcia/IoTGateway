@@ -280,22 +280,6 @@
           "connectionString": "[parameters('eventhubs_1_connectionString')]"
         }
       }
-    },
-    {
-      "type": "MICROSOFT.WEB/CONNECTIONS",
-      "apiVersion": "2018-07-01-preview",
-      "name": "[parameters('azureeventgridpublish_1_Connection_Name')]",
-      "location": "[parameters('logicAppLocation')]",
-      "properties": {
-        "api": {
-          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]"
-        },
-        "displayName": "[parameters('azureeventgridpublish_1_Connection_DisplayName')]",
-        "parameterValues": {
-          "endpoint": "[parameters('azureeventgridpublish_1_endpoint')]",
-          "api_key": "[parameters('azureeventgridpublish_1_api_key')]"
-        }
-      }
     }
   ],
   "outputs": {}

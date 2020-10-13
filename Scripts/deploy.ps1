@@ -5,7 +5,9 @@ function New-IIoTEnvironment(
     [string]$resource_group = "IIoTRG",
     [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
-    [string]$edge_vm_size = "Standard_D2s_v3"
+    [string]$edge_vm_size = "Standard_D2s_v3",
+    [string]$notifications_webhook,
+    [string]$alerts_webhook
 )
 {
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
@@ -154,7 +156,7 @@ function New-IIoTEnvironment(
         --name $eh_name `
         --sku Standard
     
-    #region Create notifications event hub
+    #region notifications event hub
     
     # create event hub
     az eventhubs eventhub create `
@@ -177,14 +179,6 @@ function New-IIoTEnvironment(
         --name $eh_listen_policy_name `
         --rights Listen
 
-    # Retrieve shared key for Listen
-    $eh_notifications_listen_key = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_listen_policy_name `
-        --query primaryKey -o tsv
-
     # create shared key to send events
     az eventhubs eventhub authorization-rule create `
         --resource-group $resource_group `
@@ -193,16 +187,24 @@ function New-IIoTEnvironment(
         --name $eh_send_policy_name `
         --rights Send
 
+    # Retrieve shared key for Listen
+    $eh_notifications_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_listen_policy_name `
+        --query primaryConnectionString -o tsv
+
     # retrieve shared key for Send
-    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
+    $eh_notifications_send_connectionstring = az eventhubs eventhub authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_notifications_name `
         --name $eh_send_policy_name `
-        --query primaryKey -o tsv
+        --query primaryConnectionString -o tsv
     #endregion
 
-    #region Create alerts event hub
+    #region alerts event hub
     
     # create event hub
     az eventhubs eventhub create `
@@ -225,14 +227,6 @@ function New-IIoTEnvironment(
         --name $eh_listen_policy_name `
         --rights Listen
 
-    # Retrieve shared key for Listen
-    $eh_alerts_listen_key = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_alerts_name `
-        --name $eh_listen_policy_name `
-        --query primaryKey -o tsv
-
     # create shared key to send events
     az eventhubs eventhub authorization-rule create `
         --resource-group $resource_group `
@@ -241,13 +235,21 @@ function New-IIoTEnvironment(
         --name $eh_send_policy_name `
         --rights Send
 
+    # Retrieve shared key for Listen
+    $eh_alerts_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_listen_policy_name `
+        --query primaryConnectionString -o tsv
+
     # retrieve shared key for Send
-    $eh_alerts_send_key = az eventhubs eventhub authorization-rule keys list `
+    $eh_alerts_send_connectionstring = az eventhubs eventhub authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_alerts_name `
         --name $eh_send_policy_name `
-        --query primaryKey -o tsv
+        --query primaryConnectionString -o tsv
     #endregion
 
     #endregion
@@ -409,6 +411,70 @@ function New-IIoTEnvironment(
         --content EdgeSolution/modules/OPC/layered.deployment.json `
         --target-condition=$deployment_condition `
         --priority $priority
+    #endregion
+
+    #region notification & alerting
+
+    #region notification
+
+    # create event grid topic
+    $notifications_topic_name = "eg-notifications-$($env_hash)"
+    $notifications_subscription_name = "notifications"
+
+    az eventgrid topic create `
+        --location $location `
+        --resource-group $resource_group `
+        --name $notifications_topic_name
+
+    $notifications_topic_id = az eventgrid topic show `
+        --resource-group $resource_group `
+        --name $notifications_topic_name `
+        --query id -o tsv
+
+    $notifications_topic_endpoint = az eventgrid topic show `
+        --resource-group $resource_group `
+        --name $notifications_topic_name `
+        --query endpoint -o tsv
+
+    $notifications_topic_key = az eventgrid topic key list `
+        --resource-group $resource_group `
+        --name $notifications_topic_name `
+        --query key1 `
+        -o tsv
+
+    az eventgrid event-subscription create `
+        --source-resource-id $notifications_topic_id `
+        --endpoint $notifications_webhook `
+        --name $notifications_subscription_name
+    
+    Write-Host -ForegroundColor Yellow "`r`n`r`nMake sure you use the Validation URL to enable the subscription for endpoint $notifications_webhook."
+    #endregion
+
+    #region logic app
+
+    #endregion
+    $notifications_app_name = "NotificationsApp"
+    $notifications_app_parameters = @{
+        "logicAppName" = @{ "value" = $notifications_app_name }
+        "azureeventgridpublish_1_Connection_Name" = @{ "value" = "eventgrid" }
+        "azureeventgridpublish_1_Connection_DisplayName" = @{ "value" = "notifeventgridconnection" }
+        "azureeventgridpublish_1_endpoint" = @{ "value" = $notifications_topic_endpoint }
+        "azureeventgridpublish_1_api_key" = @{ "value" = $notifications_topic_key }
+        "eventhubs_1_Connection_DisplayName" = @{ "value" = "notifeventhubconnection" }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_notifications_listen_connectionstring }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_consumer_group }
+        "eventhubs_1_Path" = @{ "value" = "/@{encodeURIComponent('$eh_notifications_name')}/events/batch/head" }
+    }
+    Set-Content -Path ./LogicApps/NotificationsApp/LogicApp.parameters.json -Value (ConvertTo-Json $notifications_app_parameters)
+
+    az deployment group create `
+        --resource-group $resource_group `
+        --name $notifications_app_name `
+        --mode Incremental `
+        --template-file ./LogicApps/NotificationsApp/LogicApp.json `
+        --parameters ./LogicApps/NotificationsApp/LogicApp.parameters.json
+    #endregion
+
     #endregion
 
     #region time series insight

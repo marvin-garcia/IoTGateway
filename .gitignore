@@ -370,3 +370,4 @@ StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.parameters.json
 StreamAnalytics/EdgeASA/Inputs/IoTHub.json
 /LogicApps/AlertsApp/LogicApp.parameters.json
 *.deployproj
+LogicApps/NotificationsApp/LogicApp.parameters.json
