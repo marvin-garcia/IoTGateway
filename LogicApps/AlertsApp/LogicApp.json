@@ -99,8 +99,7 @@
       "type": "string",
       "metadata": {
         "description": "DNS endpoint for the application topic for events."
-      },
-      "defaultValue": "https://eg-alerts-vabsaeca.eastus-1.eventgrid.azure.net/api/events"
+      }
     },
     "azureeventgridpublish_1_api_key": {
       "type": "securestring",

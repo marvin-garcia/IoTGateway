@@ -53,13 +53,47 @@
         "description": "Location of the Logic App."
       }
     },
+    "eventhubs_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "eventhubs"
+    },
+    "eventhubs_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "WhenThereAreNewEvents"
+    },
+    "eventhubs_1_connectionString": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure Event Hubs Connection String"
+      }
+    },
+    "eventhubs_1_Consumer_Group": {
+      "type": "string",
+      "defaultValue": "$Default"
+    },
+    "eventhubs_1_Path": {
+      "type": "string"
+    },
+    "eventhubs_1_Recurrence_Frequency": {
+      "type": "string",
+      "defaultValue": "Minute",
+      "allowedValues": [
+        "Minute",
+        "Hour",
+        "Day"
+      ]
+    },
+    "eventhubs_1_Recurrence_Interval": {
+      "type": "int",
+      "defaultValue": 5
+    },
     "azureeventgridpublish_1_Connection_Name": {
       "type": "string",
-      "defaultValue": "azureeventgridpublish"
+      "defaultValue": "eventgridconnection"
     },
     "azureeventgridpublish_1_Connection_DisplayName": {
       "type": "string",
-      "defaultValue": "notificationsgrid"
+      "defaultValue": "PublishEventToEventGrid"
     },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
@@ -71,19 +105,6 @@
       "type": "securestring",
       "metadata": {
         "description": "Primary or secondary key for the application topic."
-      }
-    },
-    "eventhubs_1_Connection_Name": {
-      "type": "string",
-      "defaultValue": "eventhubs"
-    },
-    "eventhubs_1_Connection_DisplayName": {
-      "type": "string"
-    },
-    "eventhubs_1_connectionString": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Azure Event Hubs Connection String"
       }
     }
   },
@@ -102,80 +123,78 @@
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "actions": {
             "Initialize_variable": {
+              "type": "InitializeVariable",
               "inputs": {
                 "variables": [
                   {
-                    "name": "contentstring",
+                    "name": "eventcontent",
                     "type": "string",
                     "value": "@base64ToString(triggerBody()?['ContentData'])"
                   }
                 ]
               },
-              "runAfter": {},
-              "type": "InitializeVariable"
+              "runAfter": {}
             },
             "Parse_JSON": {
+              "type": "ParseJson",
               "inputs": {
-                "content": "@variables('contentstring')",
+                "content": "@variables('eventcontent')",
                 "schema": {
+                  "type": "object",
                   "properties": {
-                    "AlternatingBoolean": {
-                      "type": "boolean"
+                    "NodeId": {
+                      "type": "string"
                     },
                     "ApplicationUri": {
                       "type": "string"
                     },
-                    "NodeId": {
+                    "ConnectionDeviceId": {
                       "type": "string"
                     },
                     "SourceTimestamp": {
                       "type": "string"
                     },
-                    "Status": {
-                      "type": "string"
+                    "AlternatingBoolean": {
+                      "type": "boolean"
                     }
-                  },
-                  "type": "object"
+                  }
                 }
               },
               "runAfter": {
                 "Initialize_variable": [
                   "Succeeded"
                 ]
-              },
-              "type": "ParseJson"
+              }
             },
             "Publish_Event": {
+              "type": "ApiConnection",
               "inputs": {
-                "body": [
-                  {
-                    "data": {
-                      "AlternatingBoolean": "@{body('Parse_JSON')?['AlternatingBoolean']}"
-                    },
-                    "eventTime": "@body('Parse_JSON')?['SourceTimestamp']",
-                    "eventType": "Telemetry",
-                    "id": "@body('Parse_JSON')?['ApplicationUri']",
-                    "subject": "IIoT Notification"
-                  }
-                ],
                 "host": {
                   "connection": {
                     "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
                   }
                 },
                 "method": "post",
+                "body": [
+                  {
+                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}:@{body('Parse_JSON')?['ApplicationUri']}",
+                    "subject": "IoT Notification",
+                    "eventType": "Notification",
+                    "data": {
+                      "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
+                    },
+                    "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                  }
+                ],
                 "path": "/eventGrid/api/events"
               },
               "runAfter": {
                 "Parse_JSON": [
                   "Succeeded"
                 ]
-              },
-              "type": "ApiConnection"
+              }
             }
           },
-          "contentVersion": "1.0.0.0",
-          "outputs": {},
           "parameters": {
             "$connections": {
               "defaultValue": {},
@@ -184,6 +203,7 @@
           },
           "triggers": {
             "When_events_are_available_in_Event_Hub": {
+              "type": "ApiConnection",
               "inputs": {
                 "host": {
                   "connection": {
@@ -191,34 +211,35 @@
                   }
                 },
                 "method": "get",
-                "path": "/@{encodeURIComponent('notifications')}/events/batch/head",
+                "path": "[parameters('eventhubs_1_Path')]",
                 "queries": {
-                  "consumerGroupName": "$Default",
                   "contentType": "application/octet-stream",
+                  "consumerGroupName": "[parameters('eventhubs_1_Consumer_Group')]",
                   "maximumEventsCount": 50
                 }
               },
               "recurrence": {
-                "frequency": "Minute",
-                "interval": 3
+                "frequency": "[parameters('eventhubs_1_Recurrence_Frequency')]",
+                "interval": "[parameters('eventhubs_1_Recurrence_Interval')]"
               },
-              "splitOn": "@triggerBody()",
-              "type": "ApiConnection"
+              "splitOn": "@triggerBody()"
             }
-          }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
         },
         "parameters": {
           "$connections": {
             "value": {
-              "azureeventgridpublish": {
-                "connectionId": "/subscriptions/f0cf2edb-86a7-44b6-9c02-9c5fee5c618d/resourceGroups/IIoTRG/providers/Microsoft.Web/connections/azureeventgridpublish",
-                "connectionName": "azureeventgridpublish",
-                "id": "/subscriptions/f0cf2edb-86a7-44b6-9c02-9c5fee5c618d/providers/Microsoft.Web/locations/eastus/managedApis/azureeventgridpublish"
-              },
               "eventhubs": {
-                "connectionId": "/subscriptions/f0cf2edb-86a7-44b6-9c02-9c5fee5c618d/resourceGroups/IIoTRG/providers/Microsoft.Web/connections/eventhubs",
-                "connectionName": "eventhubs",
-                "id": "/subscriptions/f0cf2edb-86a7-44b6-9c02-9c5fee5c618d/providers/Microsoft.Web/locations/eastus/managedApis/eventhubs"
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
+                "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
+              },
+              "azureeventgridpublish": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               }
             }
           }
@@ -257,6 +278,22 @@
         "displayName": "[parameters('eventhubs_1_Connection_DisplayName')]",
         "parameterValues": {
           "connectionString": "[parameters('eventhubs_1_connectionString')]"
+        }
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2018-07-01-preview",
+      "name": "[parameters('azureeventgridpublish_1_Connection_Name')]",
+      "location": "[parameters('logicAppLocation')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]"
+        },
+        "displayName": "[parameters('azureeventgridpublish_1_Connection_DisplayName')]",
+        "parameterValues": {
+          "endpoint": "[parameters('azureeventgridpublish_1_endpoint')]",
+          "api_key": "[parameters('azureeventgridpublish_1_api_key')]"
         }
       }
     }
