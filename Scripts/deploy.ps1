@@ -7,7 +7,8 @@ function New-IIoTEnvironment(
     [string]$iot_hub_sku = "S1",
     [string]$edge_vm_size = "Standard_D2s_v3",
     [string]$notifications_webhook,
-    [string]$alerts_webhook
+    [string]$alerts_webhook,
+    [bool]$deploy_time_series_insights = $true
 )
 {
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
@@ -535,12 +536,57 @@ function New-IIoTEnvironment(
 
     #endregion
 
-    #region time series insight
-    # $tsi_name = "tsi-$($env_hash)"
+    #endregion
 
-    # az timeseriesinsights environment standard create `
-    #     --resource-group $resource_group `
-    #     --
+    #region time series insight
+    if ($deploy_time_series_insights)
+    {
+        $tsi_name = "tsi-$($env_hash)"
+        $tsi_policy_name = "timeseriesinsights"
+        $tsi_consumer_group = "timeseriesinsights"
+        $tsi_env_name = "IIoT OPC Environment"
+
+        az iot hub consumer-group create `
+            --resource-group $resource_group `
+            --hub-name $iot_hub_name `
+            --name $tsi_consumer_group
+
+        # create iot hub policy
+        az iot hub policy create `
+            --hub-name $iot_hub_name `
+            --name $tsi_policy_name `
+            --permissions ServiceConnect
+
+        $tsi_parameters = @{
+            "iotHubResourceGroup" = @{ "value" =  $resource_group }
+            "iotHubName" = @{ "value" =  $iot_hub_name }
+            "iotConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
+            "environmentName" = @{ "value" =  $tsi_name }
+            "environmentDisplayName" = @{ "value" =  $tsi_env_name }
+            "environmentSkuName" = @{ "value" =  "L1" }
+            "environmentKind" = @{ "value" =  "LongTerm" }
+            "environmentSkuCapacity" = @{ "value" =  1 }
+            "environmentTimeSeriesIdProperties" = @{ "value" = @(
+                @{ "name" = "ConnectionDeviceId"; "type" = "string" }
+                @{ "name" = "ApplicationUri"; "type" = "string" }
+            )}
+            "eventSourceName" = @{ "value" =  "iothub" }
+            "eventSourceDisplayName" = @{ "value" =  "IoT Hub" }
+            "eventSourceTimestampPropertyName" = @{ "value" =  "SourceTimestamp" }
+            "eventSourceKeyName" = @{ "value" =  $tsi_policy_name }
+            "location" = @{ "value" =  $location }
+            "storageAccountType" = @{ "value" =  "Standard_LRS" }
+            "warmStoreDataRetention" = @{ "value" =  "PT7D" }
+        }
+        Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
+
+        az deployment group create `
+            --resource-group $resource_group `
+            --name $tsi_name `
+            --mode Incremental `
+            --template-file ./TimeSeriesInsights/azuredeploy.json `
+            --parameters ./TimeSeriesInsights/azuredeploy.parameters.json
+    }
     #endregion
 
     Write-Host ""

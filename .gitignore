@@ -371,3 +371,4 @@ StreamAnalytics/EdgeASA/Inputs/IoTHub.json
 /LogicApps/AlertsApp/LogicApp.parameters.json
 *.deployproj
 LogicApps/NotificationsApp/LogicApp.parameters.json
+TimeSeriesInsights/azuredeploy.parameters.json
