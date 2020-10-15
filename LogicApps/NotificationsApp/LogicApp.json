@@ -142,20 +142,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "NodeId": {
+                    "nodeid": {
                       "type": "string"
                     },
-                    "ApplicationUri": {
+                    "applicationuri": {
                       "type": "string"
                     },
-                    "ConnectionDeviceId": {
+                    "sourcetimestamp": {
                       "type": "string"
                     },
-                    "SourceTimestamp": {
+                    "tag": {
                       "type": "string"
                     },
-                    "AlternatingBoolean": {
+                    "value": {
                       "type": "boolean"
+                    },
+                    "connectiondeviceid": {
+                      "type": "string"
                     }
                   }
                 }
@@ -231,23 +234,23 @@
         "parameters": {
           "$connections": {
             "value": {
-              "eventhubs": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
-                "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
-              },
               "azureeventgridpublish": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
                 "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
+              },
+              "eventhubs": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
+                "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
-        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
       ]
     },
     {
