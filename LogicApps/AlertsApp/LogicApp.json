@@ -140,45 +140,33 @@
               "inputs": {
                 "content": "@variables('eventcontent')",
                 "schema": {
+                  "type": "object",
                   "properties": {
-                    "ApplicationUri": {
+                    "nodeid": {
                       "type": "string"
                     },
-                    "ConnectionDeviceId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "DipData": {
-                      "type": "number"
-                    },
-                    "DipScore": {
-                      "type": "number"
-                    },
-                    "IsAlert": {
-                      "type": "integer"
-                    },
-                    "IsDipAnomaly": {
-                      "type": "integer"
-                    },
-                    "IsSpikeAnomaly": {
-                      "type": "integer"
-                    },
-                    "NodeId": {
+                    "applicationuri": {
                       "type": "string"
                     },
-                    "SourceTimestamp": {
+                    "sourcetimestamp": {
                       "type": "string"
                     },
-                    "SpikeData": {
+                    "tag": {
+                      "type": "string"
+                    },
+                    "value": {
                       "type": "number"
                     },
-                    "SpikeScore": {
+                    "isalert": {
+                      "type": "boolean"
+                    },
+                    "anomalyscore": {
                       "type": "number"
+                    },
+                    "connectiondeviceid": {
+                      "type": "string"
                     }
-                  },
-                  "type": "object"
+                  }
                 }
               },
               "runAfter": {
