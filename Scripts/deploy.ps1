@@ -913,7 +913,13 @@ function Publish-StreamAnalyticsEdgeJob(
         
         Start-Sleep -Seconds 30
     } until (!!$package_response)
-        
+    
+    if ($package_response.status -eq 'Failed')
+    {
+        Write-Error "Failed to publish ASA edge job. $($package_response.error.message)"
+        return $null
+    }
+
     $package = ConvertFrom-Json `
         -InputObject (($package_response.manifest | Out-String) -replace 'properties.desired', 'properties_desired') `
         -Depth 15
