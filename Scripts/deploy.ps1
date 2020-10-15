@@ -197,12 +197,12 @@ function New-IIoTEnvironment(
         --query primaryConnectionString -o tsv
 
     # retrieve shared key for Send
-    $eh_notifications_send_connectionstring = az eventhubs eventhub authorization-rule keys list `
+    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_notifications_name `
         --name $eh_send_policy_name `
-        --query primaryConnectionString -o tsv
+        --query primaryKey -o tsv
     #endregion
 
     #region alerts event hub
@@ -245,12 +245,12 @@ function New-IIoTEnvironment(
         --query primaryConnectionString -o tsv
 
     # retrieve shared key for Send
-    $eh_alerts_send_connectionstring = az eventhubs eventhub authorization-rule keys list `
+    $eh_alerts_send_key = az eventhubs eventhub authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_alerts_name `
         --name $eh_send_policy_name `
-        --query primaryConnectionString -o tsv
+        --query primaryKey -o tsv
     #endregion
 
     #endregion
@@ -569,7 +569,8 @@ function New-IIoTEnvironment(
             --query 'connectionString' `
             -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
 
-        
+        $contributor = az account show --query 'user.name' -o tsv
+
         $tsi_parameters = @{
             "location" = @{ "value" =  $location }
             "eventSourceName" = @{ "value" =  "iothub" }
@@ -584,10 +585,11 @@ function New-IIoTEnvironment(
             "environmentSkuCapacity" = @{ "value" =  1 }
             "environmentTimeSeriesIdProperties" = @{ "value" = @(
                 # @{ "name" = "ConnectionDeviceId"; "type" = "string" }
-                @{ "name" = "ApplicationUri"; "type" = "string" }
+                @{ "name" = "applicationuri"; "type" = "string" }
             )}
             "eventSourceTimestampPropertyName" = @{ "value" =  "SourceTimestamp" }
             "storageAccountName" = @{ "value" =  $tsi_storage_account }
+            # "accessPolicyContributorObjectIds" = @{ "value" = @( $contributor )}
         }
         Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
 

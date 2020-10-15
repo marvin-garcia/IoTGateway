@@ -4,7 +4,7 @@
     "BlobStorageProperties": {
         "StorageAccounts": [
             {
-                "AccountName": "telemetrystoragevabsaeca",
+                "AccountName": "[required]",
                 "AccountKey": null
             }
         ],
@@ -14,7 +14,7 @@
         "TimeFormat": "HH",
         "AuthenticationMode": "ConnectionString"
     },
-    "DataSourceCredentialDomain": "1c5e34e6-659c-45e5-826d-62467a36492f.StreamAnalystics",
+    "DataSourceCredentialDomain": null,
     "Serialization": {
         "Type": "Json",
         "Encoding": "UTF8",

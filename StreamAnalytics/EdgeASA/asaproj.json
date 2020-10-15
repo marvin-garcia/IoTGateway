@@ -11,10 +11,6 @@
             "subType": "Input"
         },
         {
-            "filePath": "Inputs/IoTHub.json",
-            "subType": "Input"
-        },
-        {
             "filePath": "Outputs/alertsoutput.json",
             "subType": "Output"
         },

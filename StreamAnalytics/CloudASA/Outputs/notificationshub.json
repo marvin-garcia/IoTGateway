@@ -1,5 +1,5 @@
 {
-    "Name": "NotificationsEventHub",
+    "Name": "notificationshub",
     "DataSourceType": "Event Hub",
     "EventHubProperties": {
         "ServiceBusNamespace": "[required]",
