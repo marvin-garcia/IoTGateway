@@ -180,13 +180,13 @@
                 "method": "post",
                 "body": [
                   {
-                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}:@{body('Parse_JSON')?['ApplicationUri']}",
+                    "id": "@{body('Parse_JSON')?['connectiondeviceid']}:@{body('Parse_JSON')?['applicationuri']}",
                     "subject": "IoT Notification",
                     "eventType": "Notification",
                     "data": {
-                      "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
-                    },
-                    "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                      "Tag": "@body('Parse_JSON')?['tag']",
+                      "Value": "@body('Parse_JSON')?['value']"
+                    }
                   }
                 ],
                 "path": "/eventGrid/api/events"
@@ -234,24 +234,39 @@
         "parameters": {
           "$connections": {
             "value": {
-              "azureeventgridpublish": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
-              },
               "eventhubs": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
                 "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
+              },
+              "azureeventgridpublish": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]"
       ]
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2018-07-01-preview",
+      "name": "[parameters('eventhubs_1_Connection_Name')]",
+      "location": "[parameters('logicAppLocation')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]"
+        },
+        "displayName": "[parameters('eventhubs_1_Connection_DisplayName')]",
+        "parameterValues": {
+          "connectionString": "[parameters('eventhubs_1_connectionString')]"
+        }
+      }
     },
     {
       "type": "MICROSOFT.WEB/CONNECTIONS",
@@ -266,21 +281,6 @@
         "parameterValues": {
           "endpoint": "[parameters('azureeventgridpublish_1_endpoint')]",
           "api_key": "[parameters('azureeventgridpublish_1_api_key')]"
-        }
-      }
-    },
-    {
-      "type": "MICROSOFT.WEB/CONNECTIONS",
-      "apiVersion": "2018-07-01-preview",
-      "name": "[parameters('eventhubs_1_Connection_Name')]",
-      "location": "[parameters('logicAppLocation')]",
-      "properties": {
-        "api": {
-          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]"
-        },
-        "displayName": "[parameters('eventhubs_1_Connection_DisplayName')]",
-        "parameterValues": {
-          "connectionString": "[parameters('eventhubs_1_connectionString')]"
         }
       }
     }

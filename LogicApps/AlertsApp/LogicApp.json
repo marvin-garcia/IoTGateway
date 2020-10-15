@@ -95,11 +95,20 @@
       "type": "string",
       "defaultValue": "PublishEventToEventGrid"
     },
+    "azureeventgridpublish_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "alertseventgrid"
+    },
+    "azureeventgridpublish_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "alertseventgridconnection"
+    },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
       "metadata": {
         "description": "DNS endpoint for the application topic for events."
-      }
+      },
+      "defaultValue": "https://eg-alerts-vabsaeca.eastus-1.eventgrid.azure.net/api/events"
     },
     "azureeventgridpublish_1_api_key": {
       "type": "securestring",
@@ -182,79 +191,37 @@
                   {
                     "equals": [
                       "@body('Parse_JSON')?['isalert']",
-                      1
+                      true
                     ]
                   }
                 ]
               },
               "actions": {
-                "Condition_2": {
-                  "type": "If",
-                  "expression": {
-                    "and": [
+                "Publish_Event": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "body": [
                       {
-                        "equals": [
-                          "@body('Parse_JSON')?['isdipanomaly']",
-                          1
-                        ]
-                      }
-                    ]
-                  },
-                  "actions": {
-                    "Publish_Dip_Anomaly": {
-                      "type": "ApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connection": {
-                            "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
-                          }
+                        "id": "@{body('Parse_JSON')?['connectiondeviceid']}:@{body('Parse_JSON')?['applicationuri']}",
+                        "subject": "IoT Notification",
+                        "eventType": "Alert",
+                        "data": {
+                          "Tag": "@body('Parse_JSON')?['tag']",
+                          "Value": "@body('Parse_JSON')?['value']",
+                          "AnomalyScore": "@body('Parse_JSON')?['anomalyscore']"
                         },
-                        "method": "post",
-                        "body": [
-                          {
-                            "id": "@body('Parse_JSON')?['ApplicationUri']",
-                            "subject": "IoT Alert",
-                            "eventType": "Alert",
-                            "data": {
-                              "DipData": "@body('Parse_JSON')?['DipData']"
-                            },
-                            "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
-                          }
-                        ],
-                        "path": "/eventGrid/api/events"
-                      },
-                      "runAfter": {}
-                    }
-                  },
-                  "runAfter": {},
-                  "else": {
-                    "actions": {
-                      "Publish_Spike_Anomaly": {
-                        "type": "ApiConnection",
-                        "inputs": {
-                          "host": {
-                            "connection": {
-                              "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
-                            }
-                          },
-                          "method": "post",
-                          "body": [
-                            {
-                              "id": "@body('Parse_JSON')?['ApplicationUri']",
-                              "subject": "IoT Alert",
-                              "eventType": "Alert",
-                              "data": {
-                                "SpikeData": "@body('Parse_JSON')?['SpikeData']"
-                              },
-                              "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
-                            }
-                          ],
-                          "path": "/eventGrid/api/events"
-                        },
-                        "runAfter": {}
+                        "eventTime": "@body('Parse_JSON')?['sourcetimestamp']"
                       }
-                    }
-                  }
+                    ],
+                    "path": "/eventGrid/api/events"
+                  },
+                  "runAfter": {}
                 }
               },
               "runAfter": {
@@ -300,23 +267,23 @@
         "parameters": {
           "$connections": {
             "value": {
-              "azureeventgridpublish": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
-              },
               "eventhubs": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
                 "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
+              },
+              "azureeventgridpublish": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]"
       ]
     },
     {
