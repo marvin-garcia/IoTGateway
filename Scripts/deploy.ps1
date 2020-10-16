@@ -39,6 +39,15 @@ function New-IIoTEnvironment(
         --admin-username $edge_vm_username `
         --public-ip-address-dns-name $edge_vm_dns `
         --generate-ssh-keys
+
+    $publishednodes_file = "https://raw.githubusercontent.com/marvin-garcia/IoTGateway/opc-plc/EdgeSolution/modules/OPC/publishednodes.json"
+    $vm_custom_script = "{\`"commandToExecute\`": \`"wget $publishednodes_file -O /appdata/publishednodes.json\`"}"
+    az vm extension set `
+        --resource-group $resource_group `
+        --vm-name $edge_vm_name `
+        --name customScript `
+        --publisher Microsoft.Azure.Extensions `
+        --protected-settings $vm_custom_script
     #endregion
 
     #region iot hub
@@ -593,12 +602,14 @@ function New-IIoTEnvironment(
         }
         Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
 
-        az deployment group create `
+        $tsi_deployment = az deployment group create `
             --resource-group $resource_group `
             --name $tsi_name `
             --mode Incremental `
             --template-file ./TimeSeriesInsights/azuredeploy.json `
             --parameters ./TimeSeriesInsights/azuredeploy.parameters.json
+
+        Write-Host -ForegroundColor Yellow "Time Series Insights environment Url: $($tsi_deployment.outputs.dataAccessFQDN)"
     }
     #endregion
 
