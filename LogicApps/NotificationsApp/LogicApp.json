@@ -56,17 +56,15 @@
     },
     "eventhubs_1_Connection_Name": {
       "type": "string",
-      "defaultValue": "eventhubs"
+      "defaultValue": "NotificationsHubConnection"
     },
     "eventhubs_1_Connection_DisplayName": {
       "type": "string",
       "defaultValue": "NotificationsHubConnection"
     },
-    "eventhubs_1_consumerGroup": {
+    "eventhubs_1_Consumer_Group": {
       "type": "string",
-      "metadata": {
-        "description": "Azure Event Hubs Consmer Group"
-      }
+      "defaultValue": "$Default"
     },
     "eventhubs_1_connectionString": {
       "type": "securestring",
@@ -75,16 +73,19 @@
       }
     },
     "azureeventgridpublish_1_Connection_Name": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "NotificationsGridConnection"
     },
     "azureeventgridpublish_1_Connection_DisplayName": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "NotificationsGridConnection"
     },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
       "metadata": {
         "description": "DNS endpoint for the application topic for events."
-      }
+      },
+      "defaultValue": ""
     },
     "azureeventgridpublish_1_api_key": {
       "type": "securestring",
@@ -142,31 +143,6 @@
                     "AlternatingBoolean": {
                       "type": "boolean"
                     },
-                    "EventProcessedUtcTime": {
-                      "type": "string"
-                    },
-                    "PartitionId": {
-                      "type": "integer"
-                    },
-                    "EventEnqueuedUtcTime": {
-                      "type": "string"
-                    },
-                    "IoTHub": {
-                      "type": "object",
-                      "properties": {
-                        "MessageId": {},
-                        "CorrelationId": {},
-                        "ConnectionDeviceId": {
-                          "type": "string"
-                        },
-                        "ConnectionDeviceGenerationId": {
-                          "type": "string"
-                        },
-                        "EnqueuedTime": {
-                          "type": "string"
-                        }
-                      }
-                    },
                     "ConnectionDeviceId": {
                       "type": "string"
                     }
@@ -184,14 +160,14 @@
               "inputs": {
                 "host": {
                   "connection": {
-                    "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                    "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
                   }
                 },
                 "method": "post",
                 "body": [
                   {
-                    "id": "@{body('Parse_JSON')?['IoTHub']?['ConnectionDeviceId']}@{body('Parse_JSON')?['ApplicationUri']}/",
-                    "subject": "IoT Notifications",
+                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}/@{body('Parse_JSON')?['ApplicationUri']}/@{body('Parse_JSON')?['NodeId']}",
+                    "subject": "IoT Notification",
                     "eventType": "Notification",
                     "data": {
                       "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
@@ -227,7 +203,7 @@
                 "path": "/@{encodeURIComponent('notifications')}/events/batch/head",
                 "queries": {
                   "contentType": "application/octet-stream",
-                  "consumerGroupName": "[parameters('eventhubs_1_consumerGroup')]",
+                  "consumerGroupName": "[parameters('eventhubs_1_Consumer_Group')]",
                   "maximumEventsCount": 10
                 }
               },
@@ -244,7 +220,7 @@
         "parameters": {
           "$connections": {
             "value": {
-              "azureeventgridpublish": {
+              "azureeventgridpublish_1": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
                 "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
