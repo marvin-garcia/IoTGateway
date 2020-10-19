@@ -1,62 +1,58 @@
 SELECT
     GetMetadataPropertyValue(iothub, 'EventId') AS id,
     System.Timestamp() AS SourceTimestamp,
-    nodeid,
-    applicationuri,
-    iothub.IoTHub.ConnectionDeviceId AS connectiondeviceid,
+    nodeid AS NodeId,
+    applicationuri AS ApplicationUri,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
     /* dipdata */
-    LAST(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='DipData') AS DipValue,
-    AVG(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='DipData') AS DipAvg,
-    MAX(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='DipData') AS DipMax,
-    MIN(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='DipData') AS DipMin,
-    COUNT(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='DipData') AS DipCount,
+    LAST(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipValue,
+    AVG(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipAvg,
+    MAX(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMax,
+    MIN(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMin,
+    COUNT(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipCount,
     /* spikedata */
-    LAST(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='SpikeData') AS SpikeValue,
-    AVG(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='SpikeData') AS SpikeAvg,
-    MAX(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='SpikeData') AS SpikeMax,
-    MIN(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='SpikeData') AS SpikeMin,
-    COUNT(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='SpikeData') AS SpikeCount,
+    LAST(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeValue,
+    AVG(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeAvg,
+    MAX(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMax,
+    MIN(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMin,
+    COUNT(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeCount,
     /* positive trend */
-    LAST(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='PositiveTrendData') AS PositiveTrendValue,
-    AVG(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='PositiveTrendData') AS PositiveTrendAvg,
-    MAX(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='PositiveTrendData') AS PositiveTrendMax,
-    MIN(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='PositiveTrendData') AS PositiveTrendMin,
-    COUNT(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='PositiveTrendData') AS PositiveTrendCount,
+    LAST(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendValue,
+    AVG(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendAvg,
+    MAX(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMax,
+    MIN(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMin,
+    COUNT(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendCount,
     /* negative trend */
-    LAST(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='NegativeTrendData') AS NegativeTrendValue,
-    AVG(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='NegativeTrendData') AS NegativeTrendAvg,
-    MAX(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='NegativeTrendData') AS NegativeTrendMax,
-    MIN(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='NegativeTrendData') AS NegativeTrendMin,
-    COUNT(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='NegativeTrendData') AS NegativeTrendCount,
+    LAST(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendValue,
+    AVG(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendAvg,
+    MAX(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMax,
+    MIN(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMin,
+    COUNT(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendCount,
     /* randome signed */
-    LAST(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='RandomSignedInt32') AS RandomSignedValue,
-    AVG(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='RandomSignedInt32') AS RandomSignedAvg,
-    MAX(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='RandomSignedInt32') AS RandomSignedMax,
-    MIN(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='RandomSignedInt32') AS RandomSignedMin,
-    COUNT(value) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN tag='RandomSignedInt32') AS RandomSignedCount
+    LAST(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedValue,
+    AVG(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedAvg,
+    MAX(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMax,
+    MIN(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMin,
+    COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedCount
 INTO storageblob
 FROM iothub
 
 SELECT
-    nodeid,
-    applicationuri,
-    sourcetimestamp,
-    tag,
-    value,
-    iothub.IoTHub.ConnectionDeviceId as connectiondeviceid
+    *,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
 INTO notificationshub
 FROM iothub
-WHERE tag='AlternatingBoolean' and value > 0
+WHERE AlternatingBoolean > 0
 
 SELECT
-    nodeid,
-    applicationuri,
-    sourcetimestamp,
-    tag,
-    value,
-    isalert,
-    anomalyscore,
-    iothub.IoTHub.ConnectionDeviceId as connectiondeviceid
+    nodeid AS NodeId,
+    applicationuri AS ApplicationUri,
+    sourcetimestamp AS SourceTimestamp,
+    tag AS Tag,
+    value AS Value,
+    isalert AS IsAlert,
+    anomalyscore AS AnomalyScore,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
 INTO alertshub
 FROM iothub
 WHERE isalert > 0
