@@ -11,11 +11,24 @@ function New-IIoTEnvironment(
     [bool]$deploy_time_series_insights = $true
 )
 {
+    if (!$notifications_webhook)
+    {
+        Write-Error "You need to provide a notification webhook. If you don't have one yet, you can get one for free at https://webhook.site/"
+        return $null
+    }
+    if (!$notifications_webhook)
+    {
+        Write-Error "You need to provide an alert webhook. If you don't have one yet, you can get one for free at https://webhook.site/"
+        return $null
+    }
+
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
     $iot_hub_name = "$($iot_hub_name)-$($env_hash)"
     $deployment_condition = "tags.environment='dev'"
 
     # create resource group
+    Write-Host -ForegroundColor Yellow "`r`nCreating resource group $resource_group"
+    
     az group create --name $resource_group --location $location
 
     #region create IoT edge VM
@@ -26,6 +39,8 @@ function New-IIoTEnvironment(
     $password_length = 12
     $edge_vm_password = Get-RandomCharacters -length $password_length 'abcdef12345678-.!?'
     $edge_vm_dns = "$($edge_vm_name)-$($env_hash)"
+
+    Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge virtual machine $edge_vm_name"
 
     az vm image terms accept `
         --urn $edge_vm_image
@@ -41,7 +56,7 @@ function New-IIoTEnvironment(
         --generate-ssh-keys
 
     $publishednodes_file = "https://raw.githubusercontent.com/marvin-garcia/IoTGateway/opc-plc/EdgeSolution/modules/OPC/publishednodes.json"
-    $vm_custom_script = "{\`"commandToExecute\`": \`"wget $publishednodes_file -O /appdata/publishednodes.json\`"}"
+    $vm_custom_script = "{\`"commandToExecute\`": \`"mkdir -p /appdata && wget $publishednodes_file -O /appdata/publishednodes.json\`"}"
     az vm extension set `
         --resource-group $resource_group `
         --vm-name $edge_vm_name `
@@ -53,12 +68,16 @@ function New-IIoTEnvironment(
     #region iot hub
     
     # create iot hub
+    Write-Host -ForegroundColor Yellow "`r`nCreating IoT hub $iot_hub_name"
+
     az iot hub create `
         --resource-group $resource_group `
         --name $iot_hub_name `
         --sku $iot_hub_sku
 
     # create edge device in hub
+    Write-Host -ForegroundColor Yellow "`r`nRegistering edge device id $edge_device_id"
+
     az iot hub device-identity create `
         --hub-name $iot_hub_name `
         --device-id $edge_device_id `
@@ -78,8 +97,10 @@ function New-IIoTEnvironment(
         --script "/etc/iotedge/configedge.sh '$device_connection_string'"
 
     # set edge device twin tag
-    $device_tags = '{ "environment": "dev" }'
-    az iot hub device-twin update --hub-name $iot_hub_name --device-id $edge_device_id --set tags=$device_tags
+    Write-Host -ForegroundColor Yellow "`r`nUpdating edge device's twin tags"
+
+    $device_tags = '{ \"environment\": \"dev\" }'
+    az iot hub device-twin update --hub-name $iot_hub_name --device-id $edge_device_id --set tags="$device_tags"
 
     # create built-in events route
     az iot hub route create `
@@ -91,10 +112,12 @@ function New-IIoTEnvironment(
         --condition true
     
     # Create main deployment
+    Write-Host -ForegroundColor Yellow "`r`nCreating main IoT edge device deployment"
+
     az iot edge deployment create `
         -d main-deployment `
         --hub-name $iot_hub_name `
-        --content EdgeSolution/deployment.json `
+        --content ./EdgeSolution/deployment.template.json `
         --target-condition=$deployment_condition
     #endregion
 
@@ -126,6 +149,8 @@ function New-IIoTEnvironment(
     #region storage blob
     $persistent_storage_name = "telemetrystrg$($env_hash)"
     $persistent_storage_container = "telemetry"
+
+    Write-Host -ForegroundColor Yellow "`r`nCreating storage account $persistent_storage_name"
 
     az storage account create `
         --location $location `
@@ -160,6 +185,8 @@ function New-IIoTEnvironment(
     $eh_listen_policy_name = "listen"
     
     # create namespace
+    Write-Host -ForegroundColor Yellow "`r`nCreating event hubs namespace $eh_name"
+
     az eventhubs namespace create `
         --location $location `
         --resource-group $resource_group `
@@ -169,6 +196,8 @@ function New-IIoTEnvironment(
     #region notifications event hub
     
     # create event hub
+    Write-Host -ForegroundColor Yellow "`r`nCreating event hub $eh_notifications_name"
+
     az eventhubs eventhub create `
         --resource-group $resource_group `
         --namespace-name $eh_name `
@@ -217,6 +246,8 @@ function New-IIoTEnvironment(
     #region alerts event hub
     
     # create event hub
+    Write-Host -ForegroundColor Yellow "`r`nCreating event hub $eh_alerts_name"
+
     az eventhubs eventhub create `
         --resource-group $resource_group `
         --namespace-name $eh_name `
@@ -326,6 +357,8 @@ function New-IIoTEnvironment(
     }
     Set-Content -Value (ConvertTo-Json $asa_parameters) -Path StreamAnalytics/CloudASA/Deploy/params.json
 
+    Write-Host -ForegroundColor Yellow "`r`nCreating cloud stream analytics job $asa_name"
+
     $asa_deployment_name = "CloudASAJob"
     az deployment group create `
         --resource-group $resource_group `
@@ -341,6 +374,8 @@ function New-IIoTEnvironment(
     $asa_edge_container_name = "edgeanomaly"
 
     # create storage account to publish job
+    Write-Host -ForegroundColor Yellow "`r`nCreating edge stream analytics storage account $asa_edge_storage_name"
+
     az storage account create `
         --location $location `
         --resource-group $resource_group `
@@ -365,7 +400,7 @@ function New-IIoTEnvironment(
 
     [Array]$input_files = ((Get-Content ./StreamAnalytics/EdgeASA/asaproj.json `
         | ConvertFrom-Json).configurations | `
-        ? { $_.subType -eq "Input" -and $_.filePath -notlike "*iothub.json" }).filePath
+        Where-Object { $_.subType -eq "Input" -and $_.filePath -notlike "*iothub.json" }).filePath
     [Array]$asa_edge_input_names = @()
     foreach ($file in $input_files)
     {
@@ -374,7 +409,7 @@ function New-IIoTEnvironment(
 
     [Array]$output_files = ((Get-Content ./StreamAnalytics/EdgeASA/asaproj.json `
         | ConvertFrom-Json).configurations | `
-        ? { $_.subType -eq "Output" }).filePath
+        Where-Object { $_.subType -eq "Output" }).filePath
     [Array]$asa_edge_output_names = @()
     foreach ($file in $output_files)
     {
@@ -385,6 +420,8 @@ function New-IIoTEnvironment(
     $asa_edge_query = Get-Content -Path StreamAnalytics/EdgeASA/EdgeASA.asaql -Raw
 
     # create edge job
+    Write-Host -ForegroundColor Yellow "`r`nCreating edge stream analytics job $asa_edge_name"
+
     $edge_create = New-StreamAnalyticsEdgeJob `
         -location $location `
         -resource_group $resource_group `
@@ -397,6 +434,8 @@ function New-IIoTEnvironment(
         -query $asa_edge_query
     
     # publish edge job
+    Write-Host -ForegroundColor Yellow "`r`nPublishing edge stream analytics job $asa_edge_name"
+
     $edge_package = Publish-StreamAnalyticsEdgeJob `
         -resource_group $resource_group `
         -job_name $asa_edge_name
@@ -413,7 +452,10 @@ function New-IIoTEnvironment(
 
     # Create OPC layered deployment
     $opc_deployment_name = "opcsim"
-    $priority = 1
+    $priority = 5
+    
+    Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge layered deployment $opc_deployment_name-$priority"
+
     az iot edge deployment create `
         --layered `
         -d "$opc_deployment_name-$priority" `
@@ -430,6 +472,8 @@ function New-IIoTEnvironment(
     #region event grid topic
     $notifications_topic_name = "eg-notifications-$($env_hash)"
     $notifications_subscription_name = "notifications"
+
+    Write-Host -ForegroundColor Yellow "`r`nCreating event grid topic $notifications_topic_name"
 
     az eventgrid topic create `
         --location $location `
@@ -475,6 +519,8 @@ function New-IIoTEnvironment(
     }
     Set-Content -Path ./LogicApps/NotificationsApp/LogicApp.parameters.json -Value (ConvertTo-Json $notifications_app_parameters)
 
+    Write-Host -ForegroundColor Yellow "`r`nCreating notifications logic app $notifications_app_name"
+
     az deployment group create `
         --resource-group $resource_group `
         --name $notifications_app_name `
@@ -490,6 +536,8 @@ function New-IIoTEnvironment(
     #region event grid topic
     $alerts_topic_name = "eg-alerts-$($env_hash)"
     $alerts_subscription_name = "alerts"
+
+    Write-Host -ForegroundColor Yellow "`r`nCreating event grid topic $alerts_topic_name"
 
     az eventgrid topic create `
         --location $location `
@@ -535,6 +583,8 @@ function New-IIoTEnvironment(
     }
     Set-Content -Path ./LogicApps/AlertsApp/LogicApp.parameters.json -Value (ConvertTo-Json $alerts_app_parameters)
 
+    Write-Host -ForegroundColor Yellow "`r`nCreating alerting logic app $alerts_app_name"
+
     az deployment group create `
         --resource-group $resource_group `
         --name $alerts_app_name `
@@ -555,61 +605,16 @@ function New-IIoTEnvironment(
         $tsi_consumer_group = "timeseriesinsights"
         $tsi_storage_account = "tsistorage$($env_hash)"
 
-        az iot hub consumer-group create `
-            --resource-group $resource_group `
-            --hub-name $iot_hub_name `
-            --name $tsi_consumer_group
-
-        $iot_hub_id = az iot hub show `
-        --resource-group $resource_group `
-        --name $iot_hub_name `
-        --query id `
-        -o tsv
-
-        # create iot hub policy
-        az iot hub policy create `
-            --hub-name $iot_hub_name `
-            --name $tsi_policy_name `
-            --permissions ServiceConnect
-
-        $tsi_policy_key = (az iot hub show-connection-string `
-            --hub-name $iot_hub_name `
-            --policy-name $tsi_policy_name `
-            --query 'connectionString' `
-            -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
-
-        $contributor = az account show --query 'user.name' -o tsv
-
-        $tsi_parameters = @{
-            "location" = @{ "value" =  $location }
-            "eventSourceName" = @{ "value" =  "iothub" }
-            "eventSourceResourceName" = @{ "value" =  $iot_hub_name }
-            "eventSourceResourceId" = @{ "value" = $iot_hub_id }
-            "eventSourceConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
-            "eventSourcePolicyName" = @{ "value" =  $tsi_policy_name }
-            "eventSourceSharedAccessKey" = @{ "value" = $tsi_policy_key }
-            "environmentName" = @{ "value" =  $tsi_name }
-            "environmentSkuName" = @{ "value" =  "L1" }
-            "environmentKind" = @{ "value" =  "LongTerm" }
-            "environmentSkuCapacity" = @{ "value" =  1 }
-            "environmentTimeSeriesIdProperties" = @{ "value" = @(
-                # @{ "name" = "ConnectionDeviceId"; "type" = "string" }
-                @{ "name" = "applicationuri"; "type" = "string" }
-            )}
-            "eventSourceTimestampPropertyName" = @{ "value" =  "SourceTimestamp" }
-            "storageAccountName" = @{ "value" =  $tsi_storage_account }
-            # "accessPolicyContributorObjectIds" = @{ "value" = @( $contributor )}
-        }
-        Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
-
-        $tsi_deployment = az deployment group create `
-            --resource-group $resource_group `
-            --name $tsi_name `
-            --mode Incremental `
-            --template-file ./TimeSeriesInsights/azuredeploy.json `
-            --parameters ./TimeSeriesInsights/azuredeploy.parameters.json
-
-        Write-Host -ForegroundColor Yellow "Time Series Insights environment Url: $($tsi_deployment.outputs.dataAccessFQDN)"
+        $tsi_deployment = New-TimeSeriesInsightsEnvironment `
+            -location $location `
+            -resource_group $resource_group `
+            -iot_hub_name $iot_hub_name `
+            -tsi_name $tsi_name `
+            -tsi_policy_name $tsi_policy_name `
+            -tsi_consumer_group $tsi_consumer_group `
+            -tsi_storage_account $tsi_storage_account `
+            -tsi_timestamp_property "sourcetimestamp" `
+            -tsi_id_properties @( @{ "name" = "applicationuri"; "type" = "string" } )
     }
     #endregion
 
@@ -618,6 +623,9 @@ function New-IIoTEnvironment(
     Write-Host -foregroundColor Yellow "Username: $edge_vm_username"
     Write-Host -foregroundColor Yellow "Password: $edge_vm_password"
     Write-Host -foregroundColor Yellow "DNS: $($edge_vm_dns).$($location).cloudapp.azure.com"
+    Write-Host -foregroundColor Yellow "`r`nTSI Environment:"
+    Write-Host -foregroundColor Yellow "DNS: https://$($tsi_deployment.properties.outputs.dataAccessFQDN.value)"
+    Write-Host -foregroundColor Yellow "`r`nDon't forget to go to the Azure portal and add yourself and your teammates as a data contributor for the TSI environment $($tsi_name)"
     Write-Host ""
 }
 
@@ -787,12 +795,23 @@ function Get-RandomCharacters(
 }
 
 function Get-EnvironmentHash(
-    [string]$resource_group
+    
+    [string]$subscription_id,
+    [string]$resource_group,
+    [string]$username
 )
 {
+    if (!$subscription_id)
+    {
+        $subscription_id = az account show --query id -o tsv
+    }
+    if (!$username)
+    {
+        $username = az account show --query 'user.name' -o tsv
+    }
     $hash_length = 8
-    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($resource_group)
-    $env_hash = [Convert]::ToBase64String($Bytes).Substring($hash_length).ToLower()
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes("$subscription_id-$resource_group-$username")
+    $env_hash = [Convert]::ToBase64String($Bytes).Substring(0, $hash_length).ToLower()
 
     return $env_hash
 }
@@ -807,6 +826,7 @@ function New-StreamAnalyticsEdgeJob(
     [string]$storage_container,
     [Array]$input_names,
     [Array]$output_names,
+    [string][ValidateSet('Array', 'LineSeparated')]$output_format = "Array",
     [string]$query
 )
 {
@@ -872,6 +892,7 @@ function New-StreamAnalyticsEdgeJob(
                 "serialization" = @{
                     "type" = "JSON"
                     "properties" = @{
+                        "format" = $output_format
                         "encoding" = "UTF8"
                     }
                 }
@@ -972,4 +993,70 @@ function New-CosmosDBSQLAccount(
         --name $container_name `
         --partition-key-path $partition_key `
         --ttl ($ttl_days * 24 * 3600)
+}
+
+function New-TimeSeriesInsightsEnvironment(
+    [string]$location,
+    [string]$resource_group,
+    [string]$iot_hub_name,
+    [string]$tsi_name,
+    [string]$tsi_policy_name,
+    [string]$tsi_consumer_group,
+    [string]$tsi_storage_account,
+    [string]$tsi_timestamp_property,
+    [array]$tsi_id_properties
+)
+{
+    az iot hub consumer-group create `
+        --resource-group $resource_group `
+        --hub-name $iot_hub_name `
+        --name $tsi_consumer_group
+
+    $iot_hub_id = az iot hub show `
+    --resource-group $resource_group `
+    --name $iot_hub_name `
+    --query id `
+    -o tsv
+
+    # create iot hub policy
+    az iot hub policy create `
+        --hub-name $iot_hub_name `
+        --name $tsi_policy_name `
+        --permissions ServiceConnect
+
+    $tsi_policy_key = (az iot hub show-connection-string `
+        --hub-name $iot_hub_name `
+        --policy-name $tsi_policy_name `
+        --query 'connectionString' `
+        -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
+
+    $tsi_parameters = @{
+        "location" = @{ "value" =  $location }
+        "eventSourceName" = @{ "value" =  "iothub" }
+        "eventSourceResourceName" = @{ "value" =  $iot_hub_name }
+        "eventSourceResourceId" = @{ "value" = $iot_hub_id }
+        "eventSourceConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
+        "eventSourcePolicyName" = @{ "value" =  $tsi_policy_name }
+        "eventSourceSharedAccessKey" = @{ "value" = $tsi_policy_key }
+        "environmentName" = @{ "value" =  $tsi_name }
+        "environmentSkuName" = @{ "value" =  "L1" }
+        "environmentKind" = @{ "value" =  "LongTerm" }
+        "environmentSkuCapacity" = @{ "value" =  1 }
+        "environmentTimeSeriesIdProperties" = @{ "value" = $tsi_id_properties }
+        "eventSourceTimestampPropertyName" = @{ "value" =  $tsi_timestamp_property }
+        "storageAccountName" = @{ "value" =  $tsi_storage_account }
+    }
+    Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
+
+    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights environment $tsi_name"
+
+    $tsi_deployment = az deployment group create `
+        --resource-group $resource_group `
+        --name $tsi_name `
+        --mode Incremental `
+        --template-file ./TimeSeriesInsights/azuredeploy.json `
+        --parameters ./TimeSeriesInsights/azuredeploy.parameters.json
+
+    $tsi_deployment = $tsi_deployment | ConvertFrom-Json
+    return $tsi_deployment
 }

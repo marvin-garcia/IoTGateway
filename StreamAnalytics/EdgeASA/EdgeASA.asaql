@@ -16,23 +16,12 @@ SELECT
     sourcetimestamp,
     displayname as tag,
     value,
-    CASE
-        WHEN 
-            CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) > 0 
-        OR 
-            CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0
-        THEN CAST(1 AS bigint)
-        ELSE CAST(0 AS bigint)
-    END AS isalert,
+    CAST(1 AS bigint) AS isalert,
     CASE displayname
         WHEN 'DipData' THEN CAST(GetRecordPropertyValue(dipscores, 'Score') AS float)
         WHEN 'SpikeData' THEN CAST(GetRecordPropertyValue(spikescores, 'Score') AS float)
         ELSE CAST(0 AS float)
-    END AS anomalyscore/*,
-	CAST(GetRecordPropertyValue(dipscores, 'Score') AS float) AS dipscore,
-	CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) AS isdipanomaly,
-	CAST(GetRecordPropertyValue(spikescores, 'Score') AS float) AS spikescore,
-    CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) AS isspikeanomaly*/
+    END AS anomalyscore
 INTO alertsoutput
 FROM AnomalyDetection
 WHERE 
@@ -41,10 +30,6 @@ OR
     CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0
 
 SELECT 
-    NodeId as nodeid,
-    ApplicationUri as applicationuri,
-    value.SourceTimestamp as sourcetimestamp,
-    DisplayName as tag,
-	value.value
+    *
 INTO telemetryoutput
 FROM streaminput
