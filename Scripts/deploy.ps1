@@ -6,6 +6,7 @@ function New-IIoTEnvironment(
     [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
     [string]$edge_vm_size = "Standard_D2s_v3",
+    [int]$eventhubs_message_retention = 7,
     [string]$notifications_webhook,
     [string]$alerts_webhook,
     [bool]$deploy_time_series_insights = $true
@@ -201,7 +202,8 @@ function New-IIoTEnvironment(
     az eventhubs eventhub create `
         --resource-group $resource_group `
         --namespace-name $eh_name `
-        --name $eh_notifications_name
+        --name $eh_notifications_name `
+        --message-retention $eventhubs_message_retention
 
     # create consumer group
     az eventhubs eventhub consumer-group create `
@@ -225,22 +227,6 @@ function New-IIoTEnvironment(
         --eventhub-name $eh_notifications_name `
         --name $eh_send_policy_name `
         --rights Send
-
-    # Retrieve shared key for Listen
-    $eh_notifications_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_listen_policy_name `
-        --query primaryConnectionString -o tsv
-
-    # retrieve shared key for Send
-    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_send_policy_name `
-        --query primaryKey -o tsv
     #endregion
 
     #region alerts event hub
@@ -251,7 +237,8 @@ function New-IIoTEnvironment(
     az eventhubs eventhub create `
         --resource-group $resource_group `
         --namespace-name $eh_name `
-        --name $eh_alerts_name
+        --name $eh_alerts_name `
+        --message-retention $eventhubs_message_retention
 
     # create consumer group
     az eventhubs eventhub consumer-group create `
@@ -275,8 +262,23 @@ function New-IIoTEnvironment(
         --eventhub-name $eh_alerts_name `
         --name $eh_send_policy_name `
         --rights Send
+    #endregion
 
-    # Retrieve shared key for Listen
+    #region retrieve keys for event hubs
+    $eh_notifications_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_listen_policy_name `
+        --query primaryConnectionString -o tsv
+
+    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_notifications_name `
+        --name $eh_send_policy_name `
+        --query primaryKey -o tsv
+    
     $eh_alerts_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
@@ -452,7 +454,7 @@ function New-IIoTEnvironment(
 
     # Create OPC layered deployment
     $opc_deployment_name = "opcsim"
-    $priority = 5
+    $priority = 1
     
     Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge layered deployment $opc_deployment_name-$priority"
 
@@ -508,14 +510,10 @@ function New-IIoTEnvironment(
     $notifications_app_name = "NotificationsApp"
     $notifications_app_parameters = @{
         "logicAppName" = @{ "value" = $notifications_app_name }
-        "azureeventgridpublish_1_Connection_Name" = @{ "value" = "eventgrid" }
-        "azureeventgridpublish_1_Connection_DisplayName" = @{ "value" = "notifeventgridconnection" }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_consumer_group }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_notifications_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $notifications_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $notifications_topic_key }
-        "eventhubs_1_Connection_DisplayName" = @{ "value" = "notifeventhubconnection" }
-        "eventhubs_1_connectionString" = @{ "value" = $eh_notifications_listen_connectionstring }
-        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_consumer_group }
-        "eventhubs_1_Path" = @{ "value" = "/@{encodeURIComponent('$eh_notifications_name')}/events/batch/head" }
     }
     Set-Content -Path ./LogicApps/NotificationsApp/LogicApp.parameters.json -Value (ConvertTo-Json $notifications_app_parameters)
 
@@ -572,14 +570,10 @@ function New-IIoTEnvironment(
     $alerts_app_name = "AlertsApp"
     $alerts_app_parameters = @{
         "logicAppName" = @{ "value" = $alerts_app_name }
-        "azureeventgridpublish_1_Connection_Name" = @{ "value" = "alertseventgrid" }
-        "azureeventgridpublish_1_Connection_DisplayName" = @{ "value" = "alertseventgridconnection" }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_consumer_group }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_alerts_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $alerts_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $alerts_topic_key }
-        "eventhubs_1_Connection_DisplayName" = @{ "value" = "alertseventhubconnection" }
-        "eventhubs_1_connectionString" = @{ "value" = $eh_alerts_listen_connectionstring }
-        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_consumer_group }
-        "eventhubs_1_Path" = @{ "value" = "/@{encodeURIComponent('$eh_alerts_name')}/events/batch/head" }
     }
     Set-Content -Path ./LogicApps/AlertsApp/LogicApp.parameters.json -Value (ConvertTo-Json $alerts_app_parameters)
 
@@ -613,8 +607,8 @@ function New-IIoTEnvironment(
             -tsi_policy_name $tsi_policy_name `
             -tsi_consumer_group $tsi_consumer_group `
             -tsi_storage_account $tsi_storage_account `
-            -tsi_timestamp_property "sourcetimestamp" `
-            -tsi_id_properties @( @{ "name" = "applicationuri"; "type" = "string" } )
+            -tsi_timestamp_property "SourceTimestamp" `
+            -tsi_id_properties @( @{ "name" = "ApplicationUri"; "type" = "string" } )
     }
     #endregion
 
