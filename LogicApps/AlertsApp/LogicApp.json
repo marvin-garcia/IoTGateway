@@ -212,7 +212,7 @@
                 "queries": {
                   "contentType": "application/octet-stream",
                   "consumerGroupName": "[parameters('eventhubs_1_Consumer_Group')]",
-                  "maximumEventsCount": 10
+                  "maximumEventsCount": 5
                 }
               },
               "recurrence": {
