@@ -47,7 +47,8 @@
         "southafricanorth",
         "southafricawest",
         "switzerlandnorth",
-        "germanynorth"
+        "germanynorth",
+        "germanywestcentral"
       ],
       "metadata": {
         "description": "Location of the Logic App."
@@ -89,11 +90,11 @@
     },
     "azureeventgridpublish_1_Connection_Name": {
       "type": "string",
-      "defaultValue": "eventgridconnection"
+      "defaultValue": "azureeventgridpublish-1"
     },
     "azureeventgridpublish_1_Connection_DisplayName": {
       "type": "string",
-      "defaultValue": "PublishEventToEventGrid"
+      "defaultValue": "azureeventgridpublishconnection"
     },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
@@ -142,22 +143,47 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "nodeid": {
+                    "NodeId": {
                       "type": "string"
                     },
-                    "applicationuri": {
+                    "ApplicationUri": {
                       "type": "string"
                     },
-                    "sourcetimestamp": {
+                    "Status": {
                       "type": "string"
                     },
-                    "tag": {
+                    "SourceTimestamp": {
                       "type": "string"
                     },
-                    "value": {
+                    "AlternatingBoolean": {
                       "type": "boolean"
                     },
-                    "connectiondeviceid": {
+                    "EventProcessedUtcTime": {
+                      "type": "string"
+                    },
+                    "PartitionId": {
+                      "type": "integer"
+                    },
+                    "EventEnqueuedUtcTime": {
+                      "type": "string"
+                    },
+                    "IoTHub": {
+                      "type": "object",
+                      "properties": {
+                        "MessageId": {},
+                        "CorrelationId": {},
+                        "ConnectionDeviceId": {
+                          "type": "string"
+                        },
+                        "ConnectionDeviceGenerationId": {
+                          "type": "string"
+                        },
+                        "EnqueuedTime": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "ConnectionDeviceId": {
                       "type": "string"
                     }
                   }
@@ -174,19 +200,19 @@
               "inputs": {
                 "host": {
                   "connection": {
-                    "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                    "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
                   }
                 },
                 "method": "post",
                 "body": [
                   {
-                    "id": "@{body('Parse_JSON')?['connectiondeviceid']}:@{body('Parse_JSON')?['applicationuri']}",
+                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}:@{body('Parse_JSON')?['ApplicationUri']}",
                     "subject": "IoT Notification",
                     "eventType": "Notification",
                     "data": {
-                      "Tag": "@body('Parse_JSON')?['tag']",
-                      "Value": "@body('Parse_JSON')?['value']"
-                    }
+                      "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
+                    },
+                    "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
                   }
                 ],
                 "path": "/eventGrid/api/events"
@@ -234,23 +260,23 @@
         "parameters": {
           "$connections": {
             "value": {
+              "azureeventgridpublish_1": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
+              },
               "eventhubs": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
                 "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
-              },
-              "azureeventgridpublish": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
-        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
       ]
     },
     {

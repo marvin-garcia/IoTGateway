@@ -47,7 +47,8 @@
         "southafricanorth",
         "southafricawest",
         "switzerlandnorth",
-        "germanynorth"
+        "germanynorth",
+        "germanywestcentral"
       ],
       "metadata": {
         "description": "Location of the Logic App."
@@ -89,26 +90,17 @@
     },
     "azureeventgridpublish_1_Connection_Name": {
       "type": "string",
-      "defaultValue": "eventgridconnection"
+      "defaultValue": "azureeventgridpublish"
     },
     "azureeventgridpublish_1_Connection_DisplayName": {
       "type": "string",
-      "defaultValue": "PublishEventToEventGrid"
-    },
-    "azureeventgridpublish_1_Connection_Name": {
-      "type": "string",
-      "defaultValue": "alertseventgrid"
-    },
-    "azureeventgridpublish_1_Connection_DisplayName": {
-      "type": "string",
-      "defaultValue": "alertseventgridconnection"
+      "defaultValue": "eventgridpublishconnection"
     },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
       "metadata": {
         "description": "DNS endpoint for the application topic for events."
-      },
-      "defaultValue": "https://eg-alerts-vabsaeca.eastus-1.eventgrid.azure.net/api/events"
+      }
     },
     "azureeventgridpublish_1_api_key": {
       "type": "securestring",
@@ -151,28 +143,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "nodeid": {
+                    "NodeId": {
                       "type": "string"
                     },
-                    "applicationuri": {
+                    "ApplicationUri": {
                       "type": "string"
                     },
-                    "sourcetimestamp": {
+                    "SourceTimestamp": {
                       "type": "string"
                     },
-                    "tag": {
+                    "Tag": {
                       "type": "string"
                     },
-                    "value": {
+                    "Value": {
                       "type": "number"
                     },
-                    "isalert": {
-                      "type": "boolean"
+                    "IsAlert": {
+                      "type": "integer"
                     },
-                    "anomalyscore": {
+                    "AnomalyScore": {
                       "type": "number"
                     },
-                    "connectiondeviceid": {
+                    "ConnectionDeviceId": {
                       "type": "string"
                     }
                   }
@@ -189,9 +181,9 @@
               "expression": {
                 "and": [
                   {
-                    "equals": [
-                      "@body('Parse_JSON')?['isalert']",
-                      true
+                    "greater": [
+                      "@body('Parse_JSON')?['IsAlert']",
+                      0
                     ]
                   }
                 ]
@@ -202,21 +194,21 @@
                   "inputs": {
                     "host": {
                       "connection": {
-                        "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
+                        "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
                       }
                     },
                     "method": "post",
                     "body": [
                       {
-                        "id": "@{body('Parse_JSON')?['connectiondeviceid']}:@{body('Parse_JSON')?['applicationuri']}",
+                        "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}:@{body('Parse_JSON')?['ApplicationUri']}",
                         "subject": "IoT Notification",
                         "eventType": "Alert",
                         "data": {
-                          "Tag": "@body('Parse_JSON')?['tag']",
-                          "Value": "@body('Parse_JSON')?['value']",
-                          "AnomalyScore": "@body('Parse_JSON')?['anomalyscore']"
+                          "Tag": "@body('Parse_JSON')?['Tag']",
+                          "Value": "@body('Parse_JSON')?['Value']",
+                          "AnomalyScore": "@body('Parse_JSON')?['AnomalyScore']"
                         },
-                        "eventTime": "@body('Parse_JSON')?['sourcetimestamp']"
+                        "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
                       }
                     ],
                     "path": "/eventGrid/api/events"
@@ -267,23 +259,23 @@
         "parameters": {
           "$connections": {
             "value": {
+              "azureeventgridpublish_1": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
+              },
               "eventhubs": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
                 "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
-              },
-              "azureeventgridpublish": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
-                "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
-        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]"
       ]
     },
     {
