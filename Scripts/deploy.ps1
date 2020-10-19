@@ -2,7 +2,7 @@
 
 function New-IIoTEnvironment(
     [string]$location = "eastus",
-    [string]$resource_group = "IIoTRG",
+    [string]$resource_group,
     [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
     [string]$edge_vm_size = "Standard_D2s_v3",
@@ -194,6 +194,20 @@ function New-IIoTEnvironment(
         --name $eh_name `
         --sku Standard
     
+    # create send authorization rule
+    az eventhubs namespace authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_send_policy_name `
+        --rights Send
+
+    # create listen authorization rule
+    az eventhubs namespace authorization-rule create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_listen_policy_name `
+        --rights Listen
+
     #region notifications event hub
     
     # create event hub
@@ -211,22 +225,6 @@ function New-IIoTEnvironment(
         --namespace-name $eh_name `
         --eventhub-name $eh_notifications_name `
         --name $eh_notifications_consumer_group
-
-    # create shared key to Listen to events
-    az eventhubs eventhub authorization-rule create `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_listen_policy_name `
-        --rights Listen
-
-    # create shared key to send events
-    az eventhubs eventhub authorization-rule create `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_send_policy_name `
-        --rights Send
     #endregion
 
     #region alerts event hub
@@ -246,51 +244,18 @@ function New-IIoTEnvironment(
         --namespace-name $eh_name `
         --eventhub-name $eh_alerts_name `
         --name $eh_alerts_consumer_group
-
-    # create shared key to Listen to events
-    az eventhubs eventhub authorization-rule create `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_alerts_name `
-        --name $eh_listen_policy_name `
-        --rights Listen
-
-    # create shared key to send events
-    az eventhubs eventhub authorization-rule create `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_alerts_name `
-        --name $eh_send_policy_name `
-        --rights Send
     #endregion
 
     #region retrieve keys for event hubs
-    $eh_notifications_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
+    $eh_listen_connectionstring = az eventhubs namespace authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
         --name $eh_listen_policy_name `
         --query primaryConnectionString -o tsv
 
-    $eh_notifications_send_key = az eventhubs eventhub authorization-rule keys list `
+    $eh_send_key = az eventhubs namespace authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
-        --eventhub-name $eh_notifications_name `
-        --name $eh_send_policy_name `
-        --query primaryKey -o tsv
-    
-    $eh_alerts_listen_connectionstring = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_alerts_name `
-        --name $eh_listen_policy_name `
-        --query primaryConnectionString -o tsv
-
-    # retrieve shared key for Send
-    $eh_alerts_send_key = az eventhubs eventhub authorization-rule keys list `
-        --resource-group $resource_group `
-        --namespace-name $eh_name `
-        --eventhub-name $eh_alerts_name `
         --name $eh_send_policy_name `
         --query primaryKey -o tsv
     #endregion
@@ -350,12 +315,12 @@ function New-IIoTEnvironment(
         "Output_notificationshub_eventHubName" = @{ "value" = $eh_notifications_name }
         "Output_notificationshub_partitionKey" = @{ "value" = "" }
         "Output_notificationshub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
-        "Output_notificationshub_sharedAccessPolicyKey" = @{ "value" = $eh_notifications_send_key }
+        "Output_notificationshub_sharedAccessPolicyKey" = @{ "value" = $eh_send_key }
         "Output_alertshub_serviceBusNamespace" = @{ "value" = $eh_name }
         "Output_alertshub_eventHubName" = @{ "value" = $eh_alerts_name }
         "Output_alertshub_partitionKey" = @{ "value" = "" }
         "Output_alertshub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
-        "Output_alertshub_sharedAccessPolicyKey" = @{ "value" = $eh_alerts_send_key }
+        "Output_alertshub_sharedAccessPolicyKey" = @{ "value" = $eh_send_key }
     }
     Set-Content -Value (ConvertTo-Json $asa_parameters) -Path StreamAnalytics/CloudASA/Deploy/params.json
 
@@ -511,7 +476,7 @@ function New-IIoTEnvironment(
     $notifications_app_parameters = @{
         "logicAppName" = @{ "value" = $notifications_app_name }
         "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_consumer_group }
-        "eventhubs_1_connectionString" = @{ "value" = $eh_notifications_listen_connectionstring }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $notifications_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $notifications_topic_key }
     }
@@ -571,7 +536,7 @@ function New-IIoTEnvironment(
     $alerts_app_parameters = @{
         "logicAppName" = @{ "value" = $alerts_app_name }
         "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_consumer_group }
-        "eventhubs_1_connectionString" = @{ "value" = $eh_alerts_listen_connectionstring }
+        "eventhubs_1_connectionString" = @{ "value" = $eh_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $alerts_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $alerts_topic_key }
     }
@@ -617,10 +582,13 @@ function New-IIoTEnvironment(
     Write-Host -foregroundColor Yellow "Username: $edge_vm_username"
     Write-Host -foregroundColor Yellow "Password: $edge_vm_password"
     Write-Host -foregroundColor Yellow "DNS: $($edge_vm_dns).$($location).cloudapp.azure.com"
-    Write-Host -foregroundColor Yellow "`r`nTSI Environment:"
-    Write-Host -foregroundColor Yellow "DNS: https://$($tsi_deployment.properties.outputs.dataAccessFQDN.value)"
-    Write-Host -foregroundColor Yellow "`r`nDon't forget to go to the Azure portal and add yourself and your teammates as a data contributor for the TSI environment $($tsi_name)"
-    Write-Host ""
+    
+    if ($deploy_time_series_insights)
+    {
+        Write-Host -foregroundColor Yellow "`r`nTSI Environment:"
+        Write-Host -foregroundColor Yellow "DNS: https://$($tsi_deployment.properties.outputs.dataAccessFQDN.value)"
+        Write-Host -ForegroundColor Yellow "In order to access the TSI dashboard, you have to go to the Azure portal and add yourself as a data contributor in the Time Series Insights environment"
+    }
 }
 
 function New-IoTStoragePipeline(
