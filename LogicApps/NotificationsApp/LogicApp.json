@@ -60,7 +60,13 @@
     },
     "eventhubs_1_Connection_DisplayName": {
       "type": "string",
-      "defaultValue": "WhenThereAreNewEvents"
+      "defaultValue": "NotificationsHubConnection"
+    },
+    "eventhubs_1_consumerGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Event Hubs Consmer Group"
+      }
     },
     "eventhubs_1_connectionString": {
       "type": "securestring",
@@ -68,33 +74,11 @@
         "description": "Azure Event Hubs Connection String"
       }
     },
-    "eventhubs_1_Consumer_Group": {
-      "type": "string",
-      "defaultValue": "$Default"
-    },
-    "eventhubs_1_Path": {
+    "azureeventgridpublish_1_Connection_Name": {
       "type": "string"
     },
-    "eventhubs_1_Recurrence_Frequency": {
-      "type": "string",
-      "defaultValue": "Minute",
-      "allowedValues": [
-        "Minute",
-        "Hour",
-        "Day"
-      ]
-    },
-    "eventhubs_1_Recurrence_Interval": {
-      "type": "int",
-      "defaultValue": 5
-    },
-    "azureeventgridpublish_1_Connection_Name": {
-      "type": "string",
-      "defaultValue": "azureeventgridpublish-1"
-    },
     "azureeventgridpublish_1_Connection_DisplayName": {
-      "type": "string",
-      "defaultValue": "azureeventgridpublishconnection"
+      "type": "string"
     },
     "azureeventgridpublish_1_endpoint": {
       "type": "string",
@@ -128,7 +112,7 @@
               "inputs": {
                 "variables": [
                   {
-                    "name": "eventcontent",
+                    "name": "EventContent",
                     "type": "string",
                     "value": "@base64ToString(triggerBody()?['ContentData'])"
                   }
@@ -139,7 +123,7 @@
             "Parse_JSON": {
               "type": "ParseJson",
               "inputs": {
-                "content": "@variables('eventcontent')",
+                "content": "@variables('EventContent')",
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -200,14 +184,14 @@
               "inputs": {
                 "host": {
                   "connection": {
-                    "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
+                    "name": "@parameters('$connections')['azureeventgridpublish']['connectionId']"
                   }
                 },
                 "method": "post",
                 "body": [
                   {
-                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}:@{body('Parse_JSON')?['ApplicationUri']}",
-                    "subject": "IoT Notification",
+                    "id": "@{body('Parse_JSON')?['IoTHub']?['ConnectionDeviceId']}@{body('Parse_JSON')?['ApplicationUri']}/",
+                    "subject": "IoT Notifications",
                     "eventType": "Notification",
                     "data": {
                       "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
@@ -236,20 +220,20 @@
               "inputs": {
                 "host": {
                   "connection": {
-                    "name": "@parameters('$connections')['eventhubs']['connectionId']"
+                    "name": "@parameters('$connections')['eventhubs_1']['connectionId']"
                   }
                 },
                 "method": "get",
-                "path": "[parameters('eventhubs_1_Path')]",
+                "path": "/@{encodeURIComponent('notifications')}/events/batch/head",
                 "queries": {
                   "contentType": "application/octet-stream",
-                  "consumerGroupName": "[parameters('eventhubs_1_Consumer_Group')]",
-                  "maximumEventsCount": 50
+                  "consumerGroupName": "[parameters('eventhubs_1_consumerGroup')]",
+                  "maximumEventsCount": 10
                 }
               },
               "recurrence": {
-                "frequency": "[parameters('eventhubs_1_Recurrence_Frequency')]",
-                "interval": "[parameters('eventhubs_1_Recurrence_Interval')]"
+                "frequency": "Minute",
+                "interval": 5
               },
               "splitOn": "@triggerBody()"
             }
@@ -260,12 +244,12 @@
         "parameters": {
           "$connections": {
             "value": {
-              "azureeventgridpublish_1": {
+              "azureeventgridpublish": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'azureeventgridpublish')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azureeventgridpublish_1_Connection_Name'))]",
                 "connectionName": "[parameters('azureeventgridpublish_1_Connection_Name')]"
               },
-              "eventhubs": {
+              "eventhubs_1": {
                 "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'eventhubs')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('eventhubs_1_Connection_Name'))]",
                 "connectionName": "[parameters('eventhubs_1_Connection_Name')]"
