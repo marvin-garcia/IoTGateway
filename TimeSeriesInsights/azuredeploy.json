@@ -93,11 +93,18 @@
         "description": "The event property that will be used as the event source's timestamp. If a value isn't specified for timestampPropertyName, or if null or empty-string is specified, the event creation time will be used."
       }
     },
-    "accessPolicyContributorObjectIds": {
-      "type": "array",
-      "defaultValue": [],
+    "accessPolicyObjectId": {
+      "type": "string",
+      "defaultValue": "",
       "metadata": {
-        "description": "A list of object ids of the users or applications in AAD that should have Contributor access to the environment. The service principal objectId can be obtained by calling the Get-AzureRMADUser or the Get-AzureRMADServicePrincipal cmdlets. Creating an access policy for AAD groups is not yet supported."
+        "description": "Object id of the user or application in AAD that should have Contributor access to the environment. The service principal objectId can be obtained by calling the Get-AzureRMADUser or the Get-AzureRMADServicePrincipal cmdlets. Creating an access policy for AAD groups is not yet supported."
+      }
+    },
+    "accessPolicyRoles": {
+      "type": "array",
+      "defaultValue": [ "Contributor" ],
+      "metadata": {
+        "description": "A list of the access roles assigned to the object Id specified in the parameter accessPolicyObjectId"
       }
     },
     "location": {
@@ -191,16 +198,13 @@
       },
       "resources": [
         {
-          "condition": "[not(empty(parameters('accessPolicyContributorObjectIds')))]",
+          "condition": "[not(empty(parameters('accessPolicyObjectId')))]",
           "apiVersion": "2020-05-15",
           "name": "[concat(parameters('environmentName'), '/', 'ownerAccessPolicyName')]",
           "type": "Microsoft.TimeSeriesInsights/environments/accesspolicies",
           "properties": {
-            "principalObjectId": "[parameters('accessPolicyContributorObjectIds')]",
-            "roles": [
-              "Reader",
-              "Contributor"
-            ]
+            "principalObjectId": "[parameters('accessPolicyObjectId')]",
+            "roles": "[parameters('accessPolicyRoles')]"
           },
           "dependsOn": [
             "[concat('Microsoft.TimeSeriesInsights/environments/', parameters('environmentName'))]"
