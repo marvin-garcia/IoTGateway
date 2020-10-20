@@ -564,6 +564,13 @@ function New-IIoTEnvironment(
         $tsi_consumer_group = "timeseriesinsights"
         $tsi_storage_account = "tsistorage$($env_hash)"
 
+        $username = az account show --query 'user.name' -o tsv
+        $userid = az ad user show --id $username --query objectId -o tsv
+        if (!$userid)
+        {
+            Write-Host -ForegroundColor Yellow "Unable to retrieve current user id. Contributors will have to be added manually to the TSI environment through the Azure Portal"
+        }
+
         $tsi_deployment = New-TimeSeriesInsightsEnvironment `
             -location $location `
             -resource_group $resource_group `
@@ -573,7 +580,15 @@ function New-IIoTEnvironment(
             -tsi_consumer_group $tsi_consumer_group `
             -tsi_storage_account $tsi_storage_account `
             -tsi_timestamp_property "SourceTimestamp" `
-            -tsi_id_properties @( @{ "name" = "ApplicationUri"; "type" = "string" } )
+            -tsi_id_properties @( @{ "name" = "ApplicationUri"; "type" = "string" } ) `
+            -contributor_object_id $userid
+
+        Add-TimeSeriesInsightsModel `
+            -resource_group $resource_group `
+            -tsi_name $tsi_name `
+            -tsi_types (Get-Content -Path ./TimeSeriesInsights/Model/types.json) `
+            -tsi_hierarchies (Get-Content -Path ./TimeSeriesInsights/Model/hierarchies.json) `
+            -tsi_instances (Get-Content -Path ./TimeSeriesInsights/Model/instances.json)
     }
     #endregion
 
@@ -966,7 +981,8 @@ function New-TimeSeriesInsightsEnvironment(
     [string]$tsi_consumer_group,
     [string]$tsi_storage_account,
     [string]$tsi_timestamp_property,
-    [array]$tsi_id_properties
+    [array]$tsi_id_properties,
+    [string]$contributor_object_id
 )
 {
     az iot hub consumer-group create `
@@ -1008,6 +1024,11 @@ function New-TimeSeriesInsightsEnvironment(
         "eventSourceTimestampPropertyName" = @{ "value" =  $tsi_timestamp_property }
         "storageAccountName" = @{ "value" =  $tsi_storage_account }
     }
+
+    if (!!$contributor_object_id)
+    {
+        $tsi_parameters["accessPolicyObjectId"] = @{ "value" = $contributor_object_id }
+    }
     Set-Content -Path ./TimeSeriesInsights/azuredeploy.parameters.json -Value (ConvertTo-Json $tsi_parameters -Depth 10)
 
     Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights environment $tsi_name"
@@ -1020,5 +1041,62 @@ function New-TimeSeriesInsightsEnvironment(
         --parameters ./TimeSeriesInsights/azuredeploy.parameters.json
 
     $tsi_deployment = $tsi_deployment | ConvertFrom-Json
+
     return $tsi_deployment
+}
+
+function Add-TimeSeriesInsightsModel(
+    [string]$resource_group,
+    [string]$tsi_name,
+    [string]$tsi_types,
+    [string]$tsi_hierarchies,
+    [string]$tsi_instances
+)
+{
+    # Get auth token
+    if (!$subscription_id)
+    {
+        $subscription_id = az account show --query id -o tsv
+    }
+    $token = az account get-access-token --resource='https://api.timeseries.azure.com/' --query accessToken -o tsv
+    $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
+    
+    #region types
+    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights types"
+    
+    $tsi_fqdn = az timeseriesinsights environment show -g $resource_group -n $tsi_name --query dataAccessFqdn -o tsv
+    $types_uri = "https://$($tsi_fqdn)/timeseries/types/`$batch?api-version=2020-07-31"
+    
+    Invoke-RestMethod $types_uri `
+        -Method POST `
+        -Body $tsi_types `
+        -ContentType "application/json" `
+        -Authentication Bearer -Token $secure_token
+    #endregion
+
+    #region hierarchies
+    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights hierarchies"
+    
+    $hierarchies_uri = "https://$($tsi_fqdn)/timeseries/hierarchies/`$batch?api-version=2020-07-31"
+    
+    Write-Host $types_content
+    Invoke-RestMethod $hierarchies_uri `
+        -Method POST `
+        -Body $tsi_hierarchies `
+        -ContentType "application/json" `
+        -Authentication Bearer -Token $secure_token
+    #endregion
+
+    #region instances
+    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights instances"
+    
+    $instances_uri = "https://$($tsi_fqdn)/timeseries/instances/`$batch?api-version=2020-07-31"
+    
+    Write-Host $types_content
+    Invoke-RestMethod $instances_uri `
+        -Method POST `
+        -Body $instances_content `
+        -ContentType "application/json" `
+        -Authentication Bearer -Token $secure_token
+    #endregion
 }
