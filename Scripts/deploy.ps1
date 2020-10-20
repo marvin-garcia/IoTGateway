@@ -1079,7 +1079,6 @@ function Add-TimeSeriesInsightsModel(
     
     $hierarchies_uri = "https://$($tsi_fqdn)/timeseries/hierarchies/`$batch?api-version=2020-07-31"
     
-    Write-Host $types_content
     Invoke-RestMethod $hierarchies_uri `
         -Method POST `
         -Body $tsi_hierarchies `
@@ -1092,10 +1091,9 @@ function Add-TimeSeriesInsightsModel(
     
     $instances_uri = "https://$($tsi_fqdn)/timeseries/instances/`$batch?api-version=2020-07-31"
     
-    Write-Host $types_content
     Invoke-RestMethod $instances_uri `
         -Method POST `
-        -Body $instances_content `
+        -Body $tsi_instances `
         -ContentType "application/json" `
         -Authentication Bearer -Token $secure_token
     #endregion

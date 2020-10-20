@@ -1,0 +1,14 @@
+{
+  "put": [
+    {
+      "id": "dc355fc5-d757-4281-8e41-0899b2e3c715",
+      "name": "Factories",
+      "source": {
+        "instanceFieldNames": [
+          "City",
+          "Building"
+        ]
+      }
+    }
+  ]
+}

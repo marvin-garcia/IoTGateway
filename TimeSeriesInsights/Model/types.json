@@ -1,0 +1,169 @@
+{
+  "put": [
+    {
+      "id": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "name": "OPC Server",
+      "description": "OPC Server",
+      "variables": {
+        "EventCount": {
+          "kind": "aggregate",
+          "aggregation": {
+            "tsx": "count()"
+          }
+        },
+        "DipData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.DipData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "SpikeData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.SpikeData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "PositiveTrendData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.PositiveTrendData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "NegativeTrendData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.NegativeTrendData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "RandomSignedInt32": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.RandomSignedInt32.Long"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        }
+      }
+    },
+    {
+      "id": "c311cc15-70f8-4020-8e85-8263dc060748",
+      "name": "OPC UA Alert",
+      "description": "OPC UA Alert",
+      "variables": {
+        "Alert": {
+          "kind": "categorical",
+          "value": {
+            "tsx": "$event.isalert.Long"
+          },
+          "filter": {
+            "tsx": "($event.isalert.Long) != null"
+          },
+          "interpolation": {
+            "kind": "step",
+            "boundary": {
+              "span": "PT5M"
+            }
+          },
+          "categories": [
+            {
+              "label": "True",
+              "values": [
+                1
+              ],
+              "annotations": {
+                "color": "#FF2828"
+              }
+            },
+            {
+              "label": "False",
+              "values": [
+                0
+              ],
+              "annotations": {
+                "color": "#258225"
+              }
+            }
+          ],
+          "defaultCategory": {
+            "label": "None",
+            "annotations": {
+              "color": "#258225"
+            }
+          }
+        },
+        "Tag": {
+          "kind": "categorical",
+          "value": {
+            "tsx": "$event.tag.String"
+          },
+          "filter": {
+            "tsx": "($event.tag.String) != null"
+          },
+          "interpolation": {
+            "kind": "step",
+            "boundary": {
+              "span": "PT5M"
+            }
+          },
+          "categories": [
+            {
+              "label": "DipData",
+              "values": [
+                "DipData"
+              ],
+              "annotations": {
+                "color": "#008272"
+              }
+            },
+            {
+              "label": "SpikeData",
+              "values": [
+                "SpikeData"
+              ],
+              "annotations": {
+                "color": "#93CFFB"
+              }
+            }
+          ],
+          "defaultCategory": {
+            "label": "None",
+            "annotations": {
+              "color": "rgb(22, 83, 76)"
+            }
+          }
+        },
+        "Value": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.value.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "AnomalyScore": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.anomalyscore.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "put": [
+    {
+      "typeId": "c311cc15-70f8-4020-8e85-8263dc060748",
+      "timeSeriesId": [
+        null
+      ],
+      "name": "Autoclave PLC Alert",
+      "hierarchyIds": [
+        "dc355fc5-d757-4281-8e41-0899b2e3c715"
+      ],
+      "instanceFields": {
+        "City": "Detroit",
+        "Building": "46"
+      }
+    },
+    {
+      "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "timeSeriesId": [
+        "urn:OpcPlc:opcplc"
+      ],
+      "name": "Autoclave PLC",
+      "hierarchyIds": [
+        "dc355fc5-d757-4281-8e41-0899b2e3c715"
+      ],
+      "instanceFields": {
+        "City": "Detroit",
+        "Building": "46"
+      }
+    }
+  ]
+}
