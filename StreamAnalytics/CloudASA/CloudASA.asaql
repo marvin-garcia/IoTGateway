@@ -56,3 +56,10 @@ SELECT
 INTO alertshub
 FROM iothub
 WHERE isalert > 0
+
+SELECT
+    *,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+INTO telemetryhub
+FROM iothub
+WHERE isalert IS NULL
