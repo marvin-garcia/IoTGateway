@@ -1,25 +1,25 @@
 {
   "put": [
     {
-      "typeId": "c311cc15-70f8-4020-8e85-8263dc060748",
+      "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
       "timeSeriesId": [
-        null
+        "urn:OpcPlc:opcplc-a7038af8"
       ],
-      "name": "Autoclave PLC Alert",
+      "name": "PLC #a7038af8",
       "hierarchyIds": [
         "dc355fc5-d757-4281-8e41-0899b2e3c715"
       ],
       "instanceFields": {
         "City": "Detroit",
-        "Building": "46"
+        "Building": "22"
       }
     },
     {
       "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
       "timeSeriesId": [
-        "urn:OpcPlc:opcplc"
+        "urn:OpcPlc:opcplc-c47ec19f"
       ],
-      "name": "Autoclave PLC",
+      "name": "PLC #c47ec19f",
       "hierarchyIds": [
         "dc355fc5-d757-4281-8e41-0899b2e3c715"
       ],

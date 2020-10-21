@@ -2,8 +2,7 @@
   "put": [
     {
       "id": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
-      "name": "OPC Server",
-      "description": "OPC Server",
+      "name": "PLC",
       "variables": {
         "EventCount": {
           "kind": "aggregate",
@@ -62,23 +61,16 @@
             "tsx": "toDouble(iff($event.AlternatingBoolean.Bool, 1, 0))"
           },
           "aggregation": {
-            "tsx": "avg($value)"
+            "tsx": "last($value)"
           }
-        }
-      }
-    },
-    {
-      "id": "c311cc15-70f8-4020-8e85-8263dc060748",
-      "name": "OPC UA Alert",
-      "description": "OPC UA Alert",
-      "variables": {
-        "Alert": {
+        },
+        "DipAlert": {
           "kind": "categorical",
           "value": {
             "tsx": "$event.IsAlert.Long"
           },
           "filter": {
-            "tsx": "($event.isalert.Long) != null"
+            "tsx": "$event.Tag.String = 'DipData'"
           },
           "interpolation": {
             "kind": "step",
@@ -88,38 +80,38 @@
           },
           "categories": [
             {
-              "label": "True",
-              "values": [
-                1
-              ],
-              "annotations": {
-                "color": "#FF2828"
-              }
-            },
-            {
-              "label": "False",
+              "label": "Good",
               "values": [
                 0
               ],
               "annotations": {
                 "color": "#258225"
               }
+            },
+            {
+              "label": "Bad",
+              "values": [
+                1
+              ],
+              "annotations": {
+                "color": "#FF2828"
+              }
             }
           ],
           "defaultCategory": {
-            "label": "None",
+            "label": "Unknown",
             "annotations": {
-              "color": "#258225"
+              "color": "rgb(199, 179, 237)"
             }
           }
         },
-        "Tag": {
+        "SpikeAlert": {
           "kind": "categorical",
           "value": {
-            "tsx": "$event.Tag.String"
+            "tsx": "$event.IsAlert.Long"
           },
           "filter": {
-            "tsx": "($event.tag.String) != null"
+            "tsx": "$event.Tag.String = 'SpikeData'"
           },
           "interpolation": {
             "kind": "step",
@@ -129,47 +121,29 @@
           },
           "categories": [
             {
-              "label": "DipData",
+              "label": "Good",
               "values": [
-                "DipData"
+                0
               ],
               "annotations": {
-                "color": "#008272"
+                "color": "#258225"
               }
             },
             {
-              "label": "SpikeData",
+              "label": "Bad",
               "values": [
-                "SpikeData"
+                1
               ],
               "annotations": {
-                "color": "#93CFFB"
+                "color": "#FF2828"
               }
             }
           ],
           "defaultCategory": {
-            "label": "None",
+            "label": "Unknown",
             "annotations": {
-              "color": "rgb(22, 83, 76)"
+              "color": "rgb(199, 179, 237)"
             }
-          }
-        },
-        "Value": {
-          "kind": "numeric",
-          "value": {
-            "tsx": "$event.Value.Double"
-          },
-          "aggregation": {
-            "tsx": "avg($value)"
-          }
-        },
-        "AnomalyScore": {
-          "kind": "numeric",
-          "value": {
-            "tsx": "$event.AnomalyScore.Double"
-          },
-          "aggregation": {
-            "tsx": "avg($value)"
           }
         }
       }
