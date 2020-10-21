@@ -155,27 +155,43 @@
                 ]
               }
             },
-            "Publish_Event": {
-              "type": "ApiConnection",
-              "inputs": {
-                "host": {
-                  "connection": {
-                    "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
-                  }
-                },
-                "method": "post",
-                "body": [
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
                   {
-                    "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}/@{body('Parse_JSON')?['ApplicationUri']}/@{body('Parse_JSON')?['NodeId']}",
-                    "subject": "IoT Notification",
-                    "eventType": "Notification",
-                    "data": {
-                      "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
-                    },
-                    "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                    "equals": [
+                      "@body('Parse_JSON')?['AlternatingBoolean']",
+                      true
+                    ]
                   }
-                ],
-                "path": "/eventGrid/api/events"
+                ]
+              },
+              "actions": {
+                "Publish_Event": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azureeventgridpublish_1']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "body": [
+                      {
+                        "id": "@{body('Parse_JSON')?['ConnectionDeviceId']}/@{body('Parse_JSON')?['ApplicationUri']}/@{body('Parse_JSON')?['NodeId']}",
+                        "subject": "IoT Notification",
+                        "eventType": "Notification",
+                        "data": {
+                          "AlternatingBoolean": "@body('Parse_JSON')?['AlternatingBoolean']"
+                        },
+                        "eventTime": "@body('Parse_JSON')?['SourceTimestamp']"
+                      }
+                    ],
+                    "path": "/eventGrid/api/events"
+                  },
+                  "runAfter": {}
+                }
               },
               "runAfter": {
                 "Parse_JSON": [
