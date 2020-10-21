@@ -55,6 +55,15 @@
           "aggregation": {
             "tsx": "avg($value)"
           }
+        },
+        "AlternatingBoolean": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "toDouble(iff($event.AlternatingBoolean.Bool, 1, 0))"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
         }
       }
     },
@@ -66,7 +75,7 @@
         "Alert": {
           "kind": "categorical",
           "value": {
-            "tsx": "$event.isalert.Long"
+            "tsx": "$event.IsAlert.Long"
           },
           "filter": {
             "tsx": "($event.isalert.Long) != null"
@@ -107,7 +116,7 @@
         "Tag": {
           "kind": "categorical",
           "value": {
-            "tsx": "$event.tag.String"
+            "tsx": "$event.Tag.String"
           },
           "filter": {
             "tsx": "($event.tag.String) != null"
@@ -148,7 +157,7 @@
         "Value": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.value.Double"
+            "tsx": "$event.Value.Double"
           },
           "aggregation": {
             "tsx": "avg($value)"
@@ -157,7 +166,7 @@
         "AnomalyScore": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.anomalyscore.Double"
+            "tsx": "$event.AnomalyScore.Double"
           },
           "aggregation": {
             "tsx": "avg($value)"

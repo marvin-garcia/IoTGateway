@@ -179,9 +179,12 @@ function New-IIoTEnvironment(
     #region event hubs
     $eh_name = "eh-$($env_hash)"
     $eh_notifications_name = "notifications"
-    $eh_notifications_consumer_group = "consumer1"
+    $eh_notifications_la_consumer_group = "logicapp"
     $eh_alerts_name = "alerts"
-    $eh_alerts_consumer_group = "consumer1"
+    $eh_alerts_la_consumer_group = "logicapp"
+    $eh_alerts_tsi_consumer_group = "timeseriesinsights"
+    $eh_telemetry_name = "telemetry"
+    $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
     $eh_send_policy_name = "send"
     $eh_listen_policy_name = "listen"
     
@@ -224,7 +227,7 @@ function New-IIoTEnvironment(
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_notifications_name `
-        --name $eh_notifications_consumer_group
+        --name $eh_notifications_la_consumer_group
     #endregion
 
     #region alerts event hub
@@ -238,20 +241,61 @@ function New-IIoTEnvironment(
         --name $eh_alerts_name `
         --message-retention $eventhubs_message_retention
 
-    # create consumer group
+    # create consumer groups
     az eventhubs eventhub consumer-group create `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --eventhub-name $eh_alerts_name `
-        --name $eh_alerts_consumer_group
+        --name $eh_alerts_la_consumer_group
+    
+    az eventhubs eventhub consumer-group create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_alerts_name `
+        --name $eh_alerts_tsi_consumer_group
     #endregion
 
-    #region retrieve keys for event hubs
+    #region telemetry event hub
+    
+    # create event hub
+    Write-Host -ForegroundColor Yellow "`r`nCreating event hub $eh_telemetry_name"
+
+    az eventhubs eventhub create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_telemetry_name `
+        --message-retention $eventhubs_message_retention
+
+    # create consumer group
+    az eventhubs eventhub consumer-group create `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --eventhub-name $eh_telemetry_name `
+        --name $eh_telemetry_tsi_consumer_group
+    #endregion
+
+    #region retrieve details for event hubs
+    $eh_alerts_id = az eventhubs eventhub show `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_alerts_name `
+        --query id `
+        -o tsv
+
+    $eh_telemetry_id = az eventhubs eventhub show `
+        --resource-group $resource_group `
+        --namespace-name $eh_name `
+        --name $eh_telemetry_name `
+        --query id `
+        -o tsv
+
     $eh_listen_connectionstring = az eventhubs namespace authorization-rule keys list `
         --resource-group $resource_group `
         --namespace-name $eh_name `
         --name $eh_listen_policy_name `
         --query primaryConnectionString -o tsv
+
+    $eh_listen_shared_key = $eh_listen_connectionstring.Split(';')[2].Split('SharedAccessKey=')[1]
 
     $eh_send_key = az eventhubs namespace authorization-rule keys list `
         --resource-group $resource_group `
@@ -475,7 +519,7 @@ function New-IIoTEnvironment(
     $notifications_app_name = "NotificationsApp"
     $notifications_app_parameters = @{
         "logicAppName" = @{ "value" = $notifications_app_name }
-        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_consumer_group }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_notifications_la_consumer_group }
         "eventhubs_1_connectionString" = @{ "value" = $eh_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $notifications_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $notifications_topic_key }
@@ -535,7 +579,7 @@ function New-IIoTEnvironment(
     $alerts_app_name = "AlertsApp"
     $alerts_app_parameters = @{
         "logicAppName" = @{ "value" = $alerts_app_name }
-        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_consumer_group }
+        "eventhubs_1_Consumer_Group" = @{ "value" = $eh_alerts_la_consumer_group }
         "eventhubs_1_connectionString" = @{ "value" = $eh_listen_connectionstring }
         "azureeventgridpublish_1_endpoint" = @{ "value" = $alerts_topic_endpoint }
         "azureeventgridpublish_1_api_key" = @{ "value" = $alerts_topic_key }
@@ -560,9 +604,11 @@ function New-IIoTEnvironment(
     if ($deploy_time_series_insights)
     {
         $tsi_name = "tsi-opc-$($env_hash)"
-        $tsi_policy_name = "timeseriesinsights"
-        $tsi_consumer_group = "timeseriesinsights"
         $tsi_storage_account = "tsistorage$($env_hash)"
+        $tsi_id_properties = @(
+            # @{ "name" = "ConnectionDeviceId"; "type" = "string" }
+            @{ "name" = "ApplicationUri"; "type" = "string" }
+        )
 
         $username = az account show --query 'user.name' -o tsv
         $userid = az ad user show --id $username --query objectId -o tsv
@@ -574,14 +620,26 @@ function New-IIoTEnvironment(
         $tsi_deployment = New-TimeSeriesInsightsEnvironment `
             -location $location `
             -resource_group $resource_group `
-            -iot_hub_name $iot_hub_name `
             -tsi_name $tsi_name `
-            -tsi_policy_name $tsi_policy_name `
-            -tsi_consumer_group $tsi_consumer_group `
             -tsi_storage_account $tsi_storage_account `
-            -tsi_timestamp_property "SourceTimestamp" `
-            -tsi_id_properties @( @{ "name" = "ApplicationUri"; "type" = "string" } ) `
-            -contributor_object_id $userid
+            -tsi_id_properties $tsi_id_properties `
+            -contributor_object_id $userid `
+            -event_source1_name "telemetryhub" `
+            -event_source1_resource_id $eh_telemetry_id `
+            -event_source1_resource_namespace $eh_name `
+            -event_source1_resource_name $eh_telemetry_name `
+            -event_source1_policy_name $eh_listen_policy_name `
+            -event_source1_shared_key $eh_listen_shared_key `
+            -event_source1_consumer_group $eh_telemetry_tsi_consumer_group `
+            -event_source1_timestamp_property "SourceTimestamp" `
+            -event_source2_name "alertshub" `
+            -event_source2_resource_id $eh_alerts_id `
+            -event_source2_resource_namespace $eh_name `
+            -event_source2_resource_name $eh_alerts_name `
+            -event_source2_policy_name $eh_listen_policy_name `
+            -event_source2_shared_key $eh_listen_shared_key `
+            -event_source2_consumer_group $eh_alerts_tsi_consumer_group `
+            -event_source2_timestamp_property "SourceTimestamp"
 
         Add-TimeSeriesInsightsModel `
             -resource_group $resource_group `
@@ -975,54 +1033,52 @@ function New-CosmosDBSQLAccount(
 function New-TimeSeriesInsightsEnvironment(
     [string]$location,
     [string]$resource_group,
-    [string]$iot_hub_name,
     [string]$tsi_name,
-    [string]$tsi_policy_name,
-    [string]$tsi_consumer_group,
     [string]$tsi_storage_account,
-    [string]$tsi_timestamp_property,
     [array]$tsi_id_properties,
-    [string]$contributor_object_id
+    [string]$contributor_object_id,
+    [string]$event_source1_name,
+    [string]$event_source1_resource_id,
+    [string]$event_source1_resource_namespace,
+    [string]$event_source1_resource_name,
+    [string]$event_source1_policy_name,
+    [string]$event_source1_shared_key,
+    [string]$event_source1_consumer_group,
+    [string]$event_source1_timestamp_property,
+    [string]$event_source2_name,
+    [string]$event_source2_resource_id,
+    [string]$event_source2_resource_namespace,
+    [string]$event_source2_resource_name,
+    [string]$event_source2_policy_name,
+    [string]$event_source2_shared_key,
+    [string]$event_source2_consumer_group,
+    [string]$event_source2_timestamp_property
 )
 {
-    az iot hub consumer-group create `
-        --resource-group $resource_group `
-        --hub-name $iot_hub_name `
-        --name $tsi_consumer_group
-
-    $iot_hub_id = az iot hub show `
-    --resource-group $resource_group `
-    --name $iot_hub_name `
-    --query id `
-    -o tsv
-
-    # create iot hub policy
-    az iot hub policy create `
-        --hub-name $iot_hub_name `
-        --name $tsi_policy_name `
-        --permissions ServiceConnect
-
-    $tsi_policy_key = (az iot hub show-connection-string `
-        --hub-name $iot_hub_name `
-        --policy-name $tsi_policy_name `
-        --query 'connectionString' `
-        -o tsv).Split(';')[2].Split('SharedAccessKey=')[1]
-
     $tsi_parameters = @{
         "location" = @{ "value" =  $location }
-        "eventSourceName" = @{ "value" =  "iothub" }
-        "eventSourceResourceName" = @{ "value" =  $iot_hub_name }
-        "eventSourceResourceId" = @{ "value" = $iot_hub_id }
-        "eventSourceConsumerGroupName" = @{ "value" =  $tsi_consumer_group }
-        "eventSourcePolicyName" = @{ "value" =  $tsi_policy_name }
-        "eventSourceSharedAccessKey" = @{ "value" = $tsi_policy_key }
         "environmentName" = @{ "value" =  $tsi_name }
         "environmentSkuName" = @{ "value" =  "L1" }
         "environmentKind" = @{ "value" =  "LongTerm" }
         "environmentSkuCapacity" = @{ "value" =  1 }
         "environmentTimeSeriesIdProperties" = @{ "value" = $tsi_id_properties }
-        "eventSourceTimestampPropertyName" = @{ "value" =  $tsi_timestamp_property }
         "storageAccountName" = @{ "value" =  $tsi_storage_account }
+        "eventSource_1_Name" = @{ "value" =  $event_source1_name }
+        "eventSource_1_ResourceId" = @{ "value" = $event_source1_resource_id }
+        "eventSource_1_ResourceNamespace" = @{ "value" =  $event_source1_resource_namespace }
+        "eventSource_1_ResourceName" = @{ "value" =  $event_source1_resource_name }
+        "eventSource_1_ConsumerGroupName" = @{ "value" =  $event_source1_consumer_group }
+        "eventSource_1_PolicyName" = @{ "value" =  $event_source1_policy_name }
+        "eventSource_1_SharedAccessKey" = @{ "value" = $event_source1_shared_key }
+        "eventSource_1_TimestampPropertyName" = @{ "value" =  $event_source1_timestamp_property }
+        "eventSource_2_Name" = @{ "value" =  $event_source2_name }
+        "eventSource_2_ResourceId" = @{ "value" = $event_source2_resource_id }
+        "eventSource_2_ResourceNamespace" = @{ "value" =  $event_source2_resource_namespace }
+        "eventSource_2_ResourceName" = @{ "value" =  $event_source2_resource_name }
+        "eventSource_2_ConsumerGroupName" = @{ "value" =  $event_source2_consumer_group }
+        "eventSource_2_PolicyName" = @{ "value" =  $event_source2_policy_name }
+        "eventSource_2_SharedAccessKey" = @{ "value" = $event_source2_shared_key }
+        "eventSource_2_TimestampPropertyName" = @{ "value" =  $event_source2_timestamp_property }
     }
 
     if (!!$contributor_object_id)

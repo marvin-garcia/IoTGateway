@@ -2,37 +2,6 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "eventSourceResourceName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the event source resouce."
-      }
-    },
-    "eventSourceResourceId": {
-      "type": "string",
-      "metadata": {
-        "description": "Event source resource id"
-      }
-    },
-    "eventSourceConsumerGroupName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the consumer group that the Time Series Insights service will use to read the data from the event hub. NOTE: To avoid resource contention, this consumer group must be dedicated to the Time Series Insights service and not shared with other readers."
-      }
-    },
-    "eventSourcePolicyName": {
-      "type": "string",
-      "defaultValue": "service",
-      "metadata": {
-        "description": "The name of the shared access key that the Time Series Insights service will use to connect to the IoT hub."
-      }
-    },
-    "eventSourceSharedAccessKey": {
-      "type": "secureString",
-      "metadata": {
-        "description": "The shared access key for the event source IoT hub."
-      }
-    },
     "environmentName": {
       "type": "string",
       "defaultValue": "tsiquickstart",
@@ -77,7 +46,44 @@
         "description": "Time Series ID acts as a partition key for your data and as a primary key for your time series model. It is important that you specify the appropriate Time Series Property ID during environment creation, since you can't change it later. Note that the Property ID is case sensitive. You can use 1-3 keys: one is required, but up to three can be used to create a composite."
       }
     },
-    "eventSourceName": {
+    "eventSource_1_ResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Event source resource id"
+      }
+    },
+    "eventSource_1_ResourceNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the event source resouce."
+      }
+    },
+    "eventSource_1_ResourceName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the event source resouce."
+      }
+    },
+    "eventSource_1_ConsumerGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the consumer group that the Time Series Insights service will use to read the data from the event hub. NOTE: To avoid resource contention, this consumer group must be dedicated to the Time Series Insights service and not shared with other readers."
+      }
+    },
+    "eventSource_1_PolicyName": {
+      "type": "string",
+      "defaultValue": "service",
+      "metadata": {
+        "description": "The name of the shared access key that the Time Series Insights service will use to connect to the IoT hub."
+      }
+    },
+    "eventSource_1_SharedAccessKey": {
+      "type": "secureString",
+      "metadata": {
+        "description": "The shared access key for the event source IoT hub."
+      }
+    },
+    "eventSource_1_Name": {
       "type": "string",
       "defaultValue": "IoTHub",
       "maxLength": 90,
@@ -85,7 +91,60 @@
         "description": "Name of the event source child resource. The name cannot include:   '<', '>', '%', '&', ':', '\\', '?', '/' and any control characters. All other characters are allowed."
       }
     },
-    "eventSourceTimestampPropertyName": {
+    "eventSource_1_TimestampPropertyName": {
+      "type": "string",
+      "defaultValue": "",
+      "maxLength": 90,
+      "metadata": {
+        "description": "The event property that will be used as the event source's timestamp. If a value isn't specified for timestampPropertyName, or if null or empty-string is specified, the event creation time will be used."
+      }
+    },
+    "eventSource_2_ResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Event source resource id"
+      }
+    },
+    "eventSource_2_ResourceNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the event source resouce."
+      }
+    },
+    "eventSource_2_ResourceName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the event source resouce."
+      }
+    },
+    "eventSource_2_ConsumerGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the consumer group that the Time Series Insights service will use to read the data from the event hub. NOTE: To avoid resource contention, this consumer group must be dedicated to the Time Series Insights service and not shared with other readers."
+      }
+    },
+    "eventSource_2_PolicyName": {
+      "type": "string",
+      "defaultValue": "service",
+      "metadata": {
+        "description": "The name of the shared access key that the Time Series Insights service will use to connect to the IoT hub."
+      }
+    },
+    "eventSource_2_SharedAccessKey": {
+      "type": "secureString",
+      "metadata": {
+        "description": "The shared access key for the event source IoT hub."
+      }
+    },
+    "eventSource_2_Name": {
+      "type": "string",
+      "defaultValue": "IoTHub",
+      "maxLength": 90,
+      "metadata": {
+        "description": "Name of the event source child resource. The name cannot include:   '<', '>', '%', '&', ':', '\\', '?', '/' and any control characters. All other characters are allowed."
+      }
+    },
+    "eventSource_2_TimestampPropertyName": {
       "type": "string",
       "defaultValue": "",
       "maxLength": 90,
@@ -198,10 +257,10 @@
       },
       "resources": [
         {
-          "condition": "[not(empty(parameters('accessPolicyObjectId')))]",
           "apiVersion": "2020-05-15",
-          "name": "[concat(parameters('environmentName'), '/', 'ownerAccessPolicyName')]",
           "type": "Microsoft.TimeSeriesInsights/environments/accesspolicies",
+          "name": "[concat(parameters('environmentName'), '/', 'ownerAccessPolicyName')]",
+          "condition": "[not(empty(parameters('accessPolicyObjectId')))]",
           "properties": {
             "principalObjectId": "[parameters('accessPolicyObjectId')]",
             "roles": "[parameters('accessPolicyRoles')]"
@@ -211,21 +270,41 @@
           ]
         },
         {
-          "type": "eventsources",
-          "kind": "Microsoft.IoTHub",
-          "name": "[parameters('eventSourceName')]",
           "apiVersion": "2020-05-15",
+          "type": "eventsources",
+          "kind": "Microsoft.EventHub",
+          "name": "[parameters('eventSource_1_Name')]",
           "location": "[parameters('location')]",
           "dependsOn": [
             "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('environmentName'))]"
           ],
           "properties": {
-            "eventSourceResourceId": "[parameters('eventSourceResourceId')]",
-            "iotHubName": "[parameters('eventSourceResourceName')]",
-            "keyName": "[parameters('eventSourcePolicyName')]",
-            "consumerGroupName": "[parameters('eventSourceConsumerGroupName')]",
-            "sharedAccessKey": "[parameters('eventSourceSharedAccessKey')]",
-            "timestampPropertyName": "[parameters('eventSourceTimestampPropertyName')]"
+            "eventSourceResourceId": "[parameters('eventSource_1_ResourceId')]",
+            "serviceBusNamespace": "[parameters('eventSource_1_ResourceNamespace')]",
+            "eventHubName": "[parameters('eventSource_1_ResourceName')]",
+            "keyName": "[parameters('eventSource_1_PolicyName')]",
+            "consumerGroupName": "[parameters('eventSource_1_ConsumerGroupName')]",
+            "sharedAccessKey": "[parameters('eventSource_1_SharedAccessKey')]",
+            "timestampPropertyName": "[parameters('eventSource_1_TimestampPropertyName')]"
+          }
+        },
+        {
+          "apiVersion": "2020-05-15",
+          "type": "eventsources",
+          "kind": "Microsoft.EventHub",
+          "name": "[parameters('eventSource_2_Name')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('environmentName'))]"
+          ],
+          "properties": {
+            "eventSourceResourceId": "[parameters('eventSource_2_ResourceId')]",
+            "serviceBusNamespace": "[parameters('eventSource_2_ResourceNamespace')]",
+            "eventHubName": "[parameters('eventSource_2_ResourceName')]",
+            "keyName": "[parameters('eventSource_2_PolicyName')]",
+            "consumerGroupName": "[parameters('eventSource_2_ConsumerGroupName')]",
+            "sharedAccessKey": "[parameters('eventSource_2_SharedAccessKey')]",
+            "timestampPropertyName": "[parameters('eventSource_2_TimestampPropertyName')]"
           }
         }
       ],
