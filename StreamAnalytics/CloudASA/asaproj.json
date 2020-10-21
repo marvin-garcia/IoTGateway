@@ -21,6 +21,10 @@
         {
             "filePath": "Outputs/alertshub.json",
             "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/telemetryhub.json",
+            "subType": "Output"
         }
     ]
 }
