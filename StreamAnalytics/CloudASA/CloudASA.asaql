@@ -55,7 +55,7 @@ SELECT
     iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
 INTO alertshub
 FROM iothub
-WHERE isalert > 0
+-- WHERE isalert > 0
 
 SELECT
     *,

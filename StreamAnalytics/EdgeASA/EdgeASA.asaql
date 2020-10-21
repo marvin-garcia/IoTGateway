@@ -24,10 +24,10 @@ SELECT
     END AS anomalyscore
 INTO alertsoutput
 FROM AnomalyDetection
-WHERE 
-	CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) > 0
-OR
-    CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0
+-- WHERE 
+-- 	CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) > 0
+-- OR
+--     CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0
 
 SELECT 
     *
