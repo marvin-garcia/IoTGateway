@@ -365,6 +365,11 @@ function New-IIoTEnvironment(
         "Output_alertshub_partitionKey" = @{ "value" = "" }
         "Output_alertshub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
         "Output_alertshub_sharedAccessPolicyKey" = @{ "value" = $eh_send_key }
+        "Output_telemetryhub_serviceBusNamespace" = @{ "value" = $eh_name }
+        "Output_telemetryhub_eventHubName" = @{ "value" = $eh_telemetry_name }
+        "Output_telemetryhub_partitionKey" = @{ "value" = "" }
+        "Output_telemetryhub_sharedAccessPolicyName" = @{ "value" = $eh_send_policy_name }
+        "Output_telemetryhub_sharedAccessPolicyKey" = @{ "value" = $eh_send_key }
     }
     Set-Content -Value (ConvertTo-Json $asa_parameters) -Path StreamAnalytics/CloudASA/Deploy/params.json
 
