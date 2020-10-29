@@ -3,26 +3,6 @@
     "modulesContent": {
       "$edgeAgent": {
         "properties.desired.modules": {
-          "opcPlc-a7038af8": {
-            "version": "1.0",
-            "type": "docker",
-            "status": "running",
-            "restartPolicy": "always",
-            "settings": {
-              "image": "mcr.microsoft.com/iotedge/opc-plc:latest",
-              "createOptions": "{\"Hostname\":\"opcPlc-a7038af8\",\"Cmd\":[\"--pn=50000\",\"--autoaccept\"],\"HostConfig\":{\"PortBindings\":{\"50000/tcp\":[{\"HostPort\":\"50000\"}],\"8080/tcp\":[{\"HostPort\":\"8080\"}]}}}"
-            }
-          },
-          "opcPlc-c47ec19f": {
-            "version": "1.0",
-            "type": "docker",
-            "status": "running",
-            "restartPolicy": "always",
-            "settings": {
-              "image": "mcr.microsoft.com/iotedge/opc-plc:latest",
-              "createOptions": "{\"Hostname\":\"opcPlc-c47ec19f\",\"Cmd\":[\"--pn=50001\",\"--autoaccept\"],\"HostConfig\":{\"PortBindings\":{\"50001/tcp\":[{\"HostPort\":\"50001\"}],\"8080/tcp\":[{\"HostPort\":\"8080\"}]}}}"
-            }
-          },
           "opcPublisher": {
             "type": "docker",
             "version": "1.0",
