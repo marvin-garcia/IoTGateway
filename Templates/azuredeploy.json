@@ -297,6 +297,81 @@
         "description": "ISO duration between 7 and 31 days. Remove the 'warmStoreConfiguration' property from the envrionment to delete the warm store."
       }
     },
+    "edgeASAJobQuery": {
+      "type": "string",
+      "metadata": {
+        "description": "Transformation query for edge stream analytics job"
+      }
+    },
+    "edgeASAJobInputName": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job input name"
+      }
+    },
+    "edgeASAJobOutput1Name": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job output 1 name"
+      }
+    },
+    "edgeASAJobOutput2Name": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job output 2 name"
+      }
+    },
+    "cloudASAJobQuery": {
+      "type": "string",
+      "metadata": {
+        "description": "Transformation query for the cloud stream analytics job"
+      }
+    },
+    "cloudASAJobStreamingUnits": {
+      "type": "int",
+      "minValue": 1,
+      "maxValue": 192,
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Streaming Units"
+      },
+      "allowedValues": [
+        1,
+        3,
+        6,
+        12,
+        18,
+        24,
+        30,
+        36,
+        42,
+        48,
+        54,
+        60,
+        66,
+        72,
+        78,
+        84,
+        90,
+        96,
+        102,
+        108,
+        114,
+        120,
+        126,
+        132,
+        138,
+        144,
+        150,
+        156,
+        162,
+        168,
+        174,
+        180,
+        186,
+        192
+      ]
+    },
     "notificationsWebhookUrl": {
       "type": "string",
       "metadata": {
@@ -369,6 +444,7 @@
     "simSubnetAddressRange": "10.0.0.0/24",
     "edgeSubnetAddressRange": "10.0.1.0/24",
     "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
+    "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
     "datalakeName": "[concat('telemetrystorage', parameters('environmentHashId'))]",
     "datalakeContainerName": "telemetry",
@@ -384,9 +460,11 @@
     "industrialIoTTemplateUrl": "https://raw.githubusercontent.com/Azure/Industrial-IoT",
     "industrialIoTBranchName": "master",
     "industrialIoTSimulationProfile": "default",
+    "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
     "iotHubStorageEndpointName": "persistentstorage",
+    "iotHubOwnerPolicyName": "iothubowner",
+    "iotHubServicePolicyName": "serviceconnect",
     "asaConsumerGroupName": "streamanalytics",
-    "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "eventHubListenPolicyName": "listen",
     "eventHubListenRuleId": "[resourceId('Microsoft.EventHub/namespaces/AuthorizationRules', variables('eventHubNamespaceName'), variables('eventHubListenPolicyName'))]",
     "eventHubSendPolicyName": "send",
@@ -407,7 +485,10 @@
     "eventGridAlertsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName'))]",
     "notificationsLogicAppName": "NotificationsApp",
     "alertsLogicAppName": "AlertsApp",
-    "asaEdgeJobName": "[concat('asa-edge-', parameters('environmentHashId'))]"
+    "edgeASAJobName": "[concat('asa-edge-', parameters('environmentHashId'))]",
+    "edgeASAStorageAccountName": "[concat('asaedgestrg', parameters('environmentHashId'))]",
+    "edgeASAStorageContainerName": "asaedge",
+    "cloudASAJobName": "[concat('asa-cloud-', parameters('environmentHashId'))]"
   },
   "resources": [
     {
@@ -831,7 +912,11 @@
         "location": "[resourceGroup().location]",
         "authorizationPolicies": [
           {
-            "keyName": "streamanalytics",
+            "keyName": "[variables('iotHubOwnerPolicyName')]",
+            "rights": "RegistryWrite,ServiceConnect,DeviceConnect"
+          },
+          {
+            "keyName": "[variables('iotHubServicePolicyName')]",
             "rights": "ServiceConnect"
           }
         ],
@@ -1320,33 +1405,150 @@
       "comments": "Deploy edge stream analytics job.",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2019-08-01",
-      "name": "[variables('alertsLogicAppName')]",
+      "name": "[variables('edgeASAJobName')]",
       "properties": {
         "mode": "Incremental",
         "parameters": {
-          "logicAppName": {
-            "value": "[variables('alertsLogicAppName')]"
+          "location": {
+            "value": "[parameters('location')]"
           },
-          "eventhubs_1_Consumer_Group": {
-            "value": "[variables('logicAppConsumerGroupName')]"
+          "StreamAnalyticsJobName": {
+            "value": "[variables('edgeASAJobName')]"
           },
-          "eventhubs_1_connectionString": {
-            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryConnectionString]"
+          "EventsLateArrivalMaxDelayInSeconds": {
+            "value": 5
           },
-          "azureeventgridpublish_1_endpoint": {
-            "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+          "EventsOutOfOrderMaxDelayInSeconds": {
+            "value": 0
           },
-          "azureeventgridpublish_1_api_key": {
-            "value": "[listKeys(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).key1]"
+          "query": {
+            "value": "[parameters('edgeASAJobQuery')]"
+          },
+          "Input_streaminput_Name": {
+            "value": "[parameters('edgeASAJobInputName')]"
+          },
+          "Output_1_Name": {
+            "value": "[parameters('edgeASAJobOutput1Name')]"
+          },
+          "Output_1_Format": {
+            "value": "Array"
+          },
+          "Output_2_Name": {
+            "value": "[parameters('edgeASAJobOutput2Name')]"
+          },
+          "Output_2_Format": {
+            "value": "Array"
+          },
+          "StorageAccountName": {
+            "value": "[variables('edgeASAStorageAccountName')]"
+          },
+          "storageContainerName": {
+            "value": "[variables('edgeASAStorageContainerName')]"
           }
         },
         "templateLink": {
           "contentVersion": "1.0.0.0",
-          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/LogicApps/AlertsApp/LogicApp.json')]"
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.json')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "comments": "Deploy cloud stream analytics job.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('cloudASAJobName')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "StreamAnalyticsJobName": {
+            "value": "[variables('cloudASAJobName')]"
+          },
+          "query": {
+            "value": "[parameters('cloudASAJobQuery')]"
+          },
+          "EventsLateArrivalMaxDelayInSeconds": {
+            "value": 5
+          },
+          "EventsOutOfOrderMaxDelayInSeconds": {
+            "value": 0
+          },
+          "StreamingUnits": {
+            "value": "[parameters('cloudASAJobStreamingUnits')]"
+          },
+          "Input_iothub_iotHubNamespace": {
+            "value": "[variables('iotHubName')]"
+          },
+          "Input_iothub_consumerGroupName": {
+            "value": "[variables('asaConsumerGroupName')]"
+          },
+          "Input_iothub_endpoint": {
+            "value": "messages/events"
+          },
+          "Input_iothub_sharedAccessPolicyName": {
+            "value": "[variables('iotHubServicePolicyName')]"
+          },
+          "Input_iothub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('iotHubResourceId'), providers('Microsoft.Devices', 'Iothubs').apiVersions[0]).value[1].primaryKey]"
+          },
+          "Output_notificationshub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_notificationshub_eventHubName": {
+            "value": "[variables('eventHubNotificationsName')]"
+          },
+          "Output_notificationshub_partitionKey": {
+            "value": ""
+          },
+          "Output_notificationshub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_notificationshub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          },
+          "Output_alertshub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_alertshub_eventHubName": {
+            "value": "[variables('eventHubAlertsName')]"
+          },
+          "Output_alertshub_partitionKey": {
+            "value": ""
+          },
+          "Output_alertshub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_alertshub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          },
+          "Output_telemetryhub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_telemetryhub_eventHubName": {
+            "value": "[variables('eventHubTelemetryName')]"
+          },
+          "Output_telemetryhub_partitionKey": {
+            "value": ""
+          },
+          "Output_telemetryhub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_telemetryhub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.json')]"
         }
       },
       "dependsOn": [
-        "[concat(resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName')), '/providers/Microsoft.EventGrid/eventSubscriptions/', variables('eventGridAlertsSubscriptionName'))]"
+        "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+        // "[concat('Microsoft.EventHub/namespaces/AuthorizationRules', '/', variables('eventHubNamespaceName'), '/', variables('eventHubSendPolicyName'))]"
+        "[concat(resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName')), '/authorizationRules/', variables('eventHubSendPolicyName'))]"
       ]
     }
   ],

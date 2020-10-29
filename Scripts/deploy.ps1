@@ -3,8 +3,8 @@
 function New-IIoTEnvironment(
     [string]$location = "eastus",
     [string]$resource_group,
-    [string]$iot_hub_name = "iiot-hub",
     [string]$iot_hub_sku = "S1",
+    [string]$simulation_vm_size = "Standard_D2s_v3",
     [string]$edge_vm_size = "Standard_D2s_v3",
     [int]$eventhubs_message_retention = 7,
     [string]$notifications_webhook,
@@ -24,46 +24,159 @@ function New-IIoTEnvironment(
     }
 
     $env_hash = Get-EnvironmentHash -resource_group $resource_group
-    $iot_hub_name = "$($iot_hub_name)-$($env_hash)"
-    $deployment_condition = "tags.environment='dev'"
+    $iot_hub_name = "iothub-$($env_hash)"
+    $deployment_condition = "tags.__type__='iiotedge'"
 
     # create resource group
     Write-Host -ForegroundColor Yellow "`r`nCreating resource group $resource_group"
     
     az group create --name $resource_group --location $location
 
-    #region create IoT edge VM
-    $edge_vm_name = "linux-edge-vm-1"
-    $edge_device_id = $edge_vm_name
-    $edge_vm_image = "microsoft_iot_edge:iot_edge_vm_ubuntu:ubuntu_1604_edgeruntimeonly:latest"
-    $edge_vm_username = "azureuser"
+    #region create IoT platform
+
+    # VMs' credentials
     $password_length = 12
-    $edge_vm_password = Get-RandomCharacters -length $password_length 'abcdef12345678-.!?'
+    $vm_username = "azureuser"
+    $vm_password = New-Password -length $password_length
+
+    # OPC Sim VM parameters
+    $sim_vm_name = "opc-sim"
+    $sim_vm_username = $vm_username
+    $sim_vm_password = $vm_password
+    $sim_vm_dns = "$($sim_vm_name)-$($env_hash)"
+    
+    # IoT Edge VM parameters
+    $edge_vm_name = "linuxgateway-1"
+    $edge_device_id = $edge_vm_name
+    $edge_vm_username = $vm_username
+    $edge_vm_password = $vm_password
     $edge_vm_dns = "$($edge_vm_name)-$($env_hash)"
 
-    Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge virtual machine $edge_vm_name"
+    # virtual network parameters
+    $vnet_name = "iiot-$($env_hash)-vnet"
+    $vnet_prefix = "10.0.0.0/16"
+    $sim_subnet_name = "opc"
+    $sim_subnet_prefix = "10.0.0.0/24"
+    $edge_subnet_name = "iotedge"
+    $edge_subnet_prefix = "10.0.1.0/24"
 
-    az vm image terms accept `
-        --urn $edge_vm_image
+    # datalake storage
+    $persistent_storage_name = "telemetrystrg$($env_hash)"
+    $persistent_storage_container = "telemetry"
 
-    az vm create `
-        --location $location `
+    # event hubs
+    $eh_name = "eh-$($env_hash)"
+    $eh_notifications_name = "notifications"
+    $eh_notifications_la_consumer_group = "logicapp"
+    $eh_alerts_name = "alerts"
+    $eh_alerts_la_consumer_group = "logicapp"
+    $eh_alerts_tsi_consumer_group = "timeseriesinsights"
+    $eh_telemetry_name = "telemetry"
+    $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
+    $eh_send_policy_name = "send"
+    $eh_listen_policy_name = "listen"
+
+    # time series insights
+    $tsi_name = "tsi-$($env_hash)"
+    $tsi_sku = "L1"
+    $tsi_capacity = 1
+    $tsi_kind = "LongTerm"
+    $tsi_storage_account = "tsistorage$($env_hash)"
+    $tsi_timestamp_property = "SourceTimestamp"
+    $tsi_id_properties = @(
+        @{ "name" = "ApplicationUri"; "type" = "string" }
+    )
+
+    $username = az account show --query 'user.name' -o tsv
+    $userid = az ad user show --id $username --query objectId -o tsv
+    if (!$userid)
+    {
+        Write-Host -ForegroundColor Yellow "Unable to retrieve current user id. Contributors will have to be added manually to the TSI environment through the Azure Portal"
+    }
+
+    # edge stream analytics job
+    $edge_asa_query = Get-Content -Path ./StreamAnalytics/EdgeASA/EdgeASA.asaql -Raw
+    $edge_asa_input_name = "streaminput"
+    $edge_asa_telemetry_output_name = "telemetryoutput"
+    $edge_asa_alerts_output_name = "alertsoutput"
+
+    # cloud stream analytics job
+    $cloud_asa_query = Get-Content -Path ./StreamAnalytics/CloudASA/CloudASA.asaql -Raw
+
+    $platform_parameters = @{
+        "location" = @{ "value" = $location }
+        "environmentHashId" = @{ "value" = $env_hash }
+        "simVmName" = @{ "value" = $sim_vm_name }
+        "simVmSize" = @{ "value" = $simulation_vm_size }
+        #"simVmDnsName" = @{ "value" = $sim_vm_dns }
+        "edgeVmName" = @{ "value" = $edge_vm_name }
+        "edgeVmSize" = @{ "value" = $edge_vm_size }
+        #"edgeVmDnsName" = @{ "value" = $edge_vm_dns }
+        "adminUsername" = @{ "value" = $sim_vm_username }
+        "adminPassword" = @{ "value" = $sim_vm_password }
+        #"vnetName" = @{ "value" = $vnet_name }
+        #"vnetAddressPrefix" = @{ "value" = $vnet_prefix }
+        #"simSubnetName" = @{ "value" = $sim_subnet_name}
+        #"simSubnetAddressRange" = @{ "value" = $sim_subnet_prefix }
+        #"edgeSubnetName" = @{ "value" = $edge_subnet_name }
+        #"edgeSubnetAddressRange" = @{ "value" = $edge_subnet_prefix }
+        #"iotHubName" = @{ "value" = $iot_hub_name }
+        #"dpsName" = @{ "value" = "dps-$($env_hash)" }
+        "branchName" = @{ "value" = "opc-plc" }
+        #"datalakeName" = @{ "value" = $persistent_storage_name }
+        #"datalakeContainerName" = @{ "value" = $persistent_storage_container }
+        #"eventHubNamespaceName" = @{ "value" = $eh_name }
+        "eventHubRetentionInDays" = @{ "value" = $eventhubs_message_retention }
+        #"tsiEnvironmentName" = @{ "value" =  $tsi_name }
+        "tsiEnvironmentSku" = @{ "value" =  $tsi_sku }
+        "tsiEnvironmentKind" = @{ "value" =  $tsi_kind }
+        "tsiEnvironmentSkuCapacity" = @{ "value" =  $tsi_capacity }
+        "tsiEnvironmentTimeSeriesIdProperties" = @{ "value" = $tsi_id_properties }
+        #"tsiStorageAccountName" = @{ "value" =  $tsi_storage_account }
+        "tsiTimestampPropertyName" = @{ "value" =  $tsi_timestamp_property }
+        "tsiAccessPolicyObjectId" = @{ "value" = $userid }
+        "notificationsWebhookUrl" = @{ "value" = $notifications_webhook }
+        "alertsWebhookUrl" = @{ "value" = $alerts_webhook }
+        "edgeASAJobQuery" = @{ "value" = ($edge_asa_query | Out-String) }
+        "edgeASAJobInputName" = @{ "value" = $edge_asa_input_name }
+        "edgeASAJobOutput1Name" = @{ "value" = $edge_asa_telemetry_output_name }
+        "edgeASAJobOutput2Name" = @{ "value" = $edge_asa_alerts_output_name }
+        "cloudASAJobQuery" = @{ "value" = ($cloud_asa_query | Out-String) }
+    }
+    Set-Content -Path ./Templates/azuredeploy.parameters.json -Value (ConvertTo-Json $platform_parameters -Depth 5)
+
+    $deployment_output = az deployment group create `
         --resource-group $resource_group `
-        --name $edge_vm_name `
-        --size $edge_vm_size `
-        --image $edge_vm_image `
-        --admin-username $edge_vm_username `
-        --public-ip-address-dns-name $edge_vm_dns `
-        --generate-ssh-keys
+        --name 'IIoT' `
+        --mode Incremental `
+        --template-file ./Templates/azuredeploy.json `
+        --parameters ./Templates/azuredeploy.parameters.json
+    #endregion
 
-    $publishednodes_file = "https://raw.githubusercontent.com/marvin-garcia/IoTGateway/opc-plc/EdgeSolution/modules/OPC/publishednodes.json"
-    $vm_custom_script = "{\`"commandToExecute\`": \`"mkdir -p /appdata && wget $publishednodes_file -O /appdata/publishednodes.json\`"}"
-    az vm extension set `
-        --resource-group $resource_group `
-        --vm-name $edge_vm_name `
-        --name customScript `
-        --publisher Microsoft.Azure.Extensions `
-        --protected-settings $vm_custom_script
+    #region create IoT edge VM
+    # Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge virtual machine $edge_vm_name"
+
+    # az vm image terms accept `
+    #     --urn $edge_vm_image
+
+    # az vm create `
+    #     --location $location `
+    #     --resource-group $resource_group `
+    #     --name $edge_vm_name `
+    #     --size $edge_vm_size `
+    #     --image $edge_vm_image `
+    #     --admin-username $edge_vm_username `
+    #     --public-ip-address-dns-name $edge_vm_dns `
+    #     --generate-ssh-keys
+
+    # $publishednodes_file = "https://raw.githubusercontent.com/marvin-garcia/IoTGateway/opc-plc/EdgeSolution/modules/OPC/publishednodes.json"
+    # $vm_custom_script = "{\`"commandToExecute\`": \`"mkdir -p /appdata && wget $publishednodes_file -O /appdata/publishednodes.json\`"}"
+    # az vm extension set `
+    #     --resource-group $resource_group `
+    #     --vm-name $edge_vm_name `
+    #     --name customScript `
+    #     --publisher Microsoft.Azure.Extensions `
+    #     --protected-settings $vm_custom_script
     #endregion
 
     #region iot hub
@@ -113,40 +226,17 @@ function New-IIoTEnvironment(
         --condition true
     
     # Create main deployment
-    Write-Host -ForegroundColor Yellow "`r`nCreating main IoT edge device deployment"
+    # Write-Host -ForegroundColor Yellow "`r`nCreating main IoT edge device deployment"
 
-    az iot edge deployment create `
-        -d main-deployment `
-        --hub-name $iot_hub_name `
-        --content ./EdgeSolution/deployment.template.json `
-        --target-condition=$deployment_condition
+    # az iot edge deployment create `
+    #     -d main-deployment `
+    #     --hub-name $iot_hub_name `
+    #     --content ./EdgeSolution/deployment.template.json `
+    #     --target-condition=$deployment_condition
     #endregion
 
     #region permanent storage
     
-    #region cosmos DB
-    # $cosmos_account_name = "cosmos-$($env_hash)"
-    # $database_name = "iiotdb"
-    # $container_name = "telemetry"
-    # $container_partition_key = "/NodeId"
-    # $ttl_days = 7
-
-    # New-CosmosDBSQLAccount `
-    #     -location $location `
-    #     -resource_group $resource_group `
-    #     -account_name $cosmos_account_name `
-    #     -database_name $database_name `
-    #     -container_name $container_name `
-    #     -partition_key $container_partition_key `
-    #     -ttl_days = $ttl_days
-    
-    # $cosmos_key = az cosmosdb keys list `
-    #     --resource-group $resource_group `
-    #     --name $cosmos_account_name `
-    #     --query primaryMasterKey `
-    #     -o tsv
-    #endregion
-
     #region storage blob
     $persistent_storage_name = "telemetrystrg$($env_hash)"
     $persistent_storage_container = "telemetry"
@@ -172,6 +262,15 @@ function New-IIoTEnvironment(
         --account-name $persistent_storage_name `
         --account-key $persistent_storage_key `
         --name $persistent_storage_container
+    
+    # create IoT hub storage route
+    New-IoTStoragePipeline `
+        -resource_group $resource_group `
+        -hub_name $iot_hub_name `
+        -endpoint_name telemetrystorage `
+        -route_name telemetrystorage `
+        -storage_account_name $persistent_storage_name `
+        -container_name $persistent_storage_container
     #endregion
     
     #endregion
@@ -348,13 +447,13 @@ function New-IIoTEnvironment(
         "Input_iothub_endpoint" = @{ "value" = "messages/events" }
         "Input_iothub_sharedAccessPolicyName" = @{ "value" = $asa_policy_name }
         "Input_iothub_sharedAccessPolicyKey" = @{ "value" = $policy_shared_key }
-        "Output_storageblob_Storage1_accountName" = @{ "value" = $persistent_storage_name }
-        "Output_storageblob_Storage1_accountKey" = @{ "value" = $persistent_storage_key }
-        "Output_storageblob_container" = @{ "value" = $persistent_storage_container }
-        "Output_storageblob_pathPattern" = @{ "value" = "{ConnectionDeviceId}/{datetime:yyyy}/{datetime:MM}/{datetime:dd}/{datetime:HH}/{datetime:mm}" }
-        "Output_storageblob_dateFormat" = @{ "value" = "yyyy/MM/dd" }
-        "Output_storageblob_timeFormat" = @{ "value" = "HH" }
-        "Output_storageblob_authenticationMode" = @{ "value" = "ConnectionString" }
+        # "Output_storageblob_Storage1_accountName" = @{ "value" = $persistent_storage_name }
+        # "Output_storageblob_Storage1_accountKey" = @{ "value" = $persistent_storage_key }
+        # "Output_storageblob_container" = @{ "value" = $persistent_storage_container }
+        # "Output_storageblob_pathPattern" = @{ "value" = "{ConnectionDeviceId}/{datetime:yyyy}/{datetime:MM}/{datetime:dd}/{datetime:HH}/{datetime:mm}" }
+        # "Output_storageblob_dateFormat" = @{ "value" = "yyyy/MM/dd" }
+        # "Output_storageblob_timeFormat" = @{ "value" = "HH" }
+        # "Output_storageblob_authenticationMode" = @{ "value" = "ConnectionString" }
         "Output_notificationshub_serviceBusNamespace" = @{ "value" = $eh_name }
         "Output_notificationshub_eventHubName" = @{ "value" = $eh_notifications_name }
         "Output_notificationshub_partitionKey" = @{ "value" = "" }
@@ -672,9 +771,9 @@ function New-IIoTEnvironment(
 function New-IoTStoragePipeline(
     [string]$subscription_id,
     [string]$resource_group,
-    [string]$iot_hub_name,
-    [string]$iot_hub_endpoint_name,
-    [string]$iot_hub_route_name,
+    [string]$hub_name,
+    [string]$endpoint_name,
+    [string]$route_name,
     [string]$storage_account_name,
     [string]$container_name
 )
@@ -691,20 +790,20 @@ function New-IoTStoragePipeline(
 
     az iot hub routing-endpoint create `
         --resource-group $resource_group `
-        --hub-name $iot_hub_name `
+        --hub-name $hub_name `
         --endpoint-subscription-id $subscription_id `
         --endpoint-resource-group $resource_group `
         --endpoint-type azurestoragecontainer `
-        --endpoint-name $iot_hub_endpoint_name `
+        --endpoint-name $endpoint_name `
         --container $container_name `
         --connection-string $connection_string `
         --encoding json
     
     az iot hub route create `
         --resource-group $resource_group `
-        --hub-name $iot_hub_name `
-        --endpoint-name $iot_hub_endpoint_name `
-        --name $iot_hub_route_name `
+        --hub-name $hub_name `
+        --endpoint-name $endpoint_name `
+        --name $route_name `
         --source devicemessages `
         --condition true
 }
@@ -823,15 +922,24 @@ function New-IoTServiceBusPipeline(
     Write-Host "Service bus connection string: $connection_string"
 }
 
-function Get-RandomCharacters(
-    [string]$length,
-    [string]$characters = 'abcedf1234567890!$%-_=+?'
-)
-{ 
-    $random = 1..$length | ForEach-Object { Get-Random -Maximum $characters.length } 
-    $private:ofs="" 
-    $array = [String]$characters[$random]
-    return $array
+Function New-Password() {
+    param(
+        $length = 15
+    )
+    $punc = 46..46
+    $digits = 48..57
+    $lcLetters = 65..90
+    $ucLetters = 97..122
+    $password = `
+        [char](Get-Random -Count 1 -InputObject ($lcLetters)) + `
+        [char](Get-Random -Count 1 -InputObject ($ucLetters)) + `
+        [char](Get-Random -Count 1 -InputObject ($digits)) + `
+        [char](Get-Random -Count 1 -InputObject ($punc))
+    $password += get-random -Count ($length - 4) `
+        -InputObject ($punc + $digits + $lcLetters + $ucLetters) |`
+        ForEach-Object -begin { $aa = $null } -process { $aa += [char]$_ } -end { $aa }
+
+    return $password
 }
 
 function Get-EnvironmentHash(
@@ -850,7 +958,7 @@ function Get-EnvironmentHash(
         $username = az account show --query 'user.name' -o tsv
     }
     $hash_length = 8
-    $Bytes = [System.Text.Encoding]::Unicode.GetBytes("$subscription_id-$resource_group-$username")
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes("$resource_group-$username")
     $env_hash = [Convert]::ToBase64String($Bytes).Substring(0, $hash_length).ToLower()
 
     return $env_hash
