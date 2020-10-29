@@ -1,43 +1,4 @@
 SELECT
-    GetMetadataPropertyValue(iothub, 'EventId') AS id,
-    System.Timestamp() AS SourceTimestamp,
-    nodeid AS NodeId,
-    applicationuri AS ApplicationUri,
-    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId,
-    /* dipdata */
-    LAST(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipValue,
-    AVG(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipAvg,
-    MAX(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMax,
-    MIN(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMin,
-    COUNT(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipCount,
-    /* spikedata */
-    LAST(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeValue,
-    AVG(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeAvg,
-    MAX(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMax,
-    MIN(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMin,
-    COUNT(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeCount,
-    /* positive trend */
-    LAST(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendValue,
-    AVG(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendAvg,
-    MAX(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMax,
-    MIN(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMin,
-    COUNT(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendCount,
-    /* negative trend */
-    LAST(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendValue,
-    AVG(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendAvg,
-    MAX(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMax,
-    MIN(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMin,
-    COUNT(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendCount,
-    /* randome signed */
-    LAST(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedValue,
-    AVG(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedAvg,
-    MAX(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMax,
-    MIN(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMin,
-    COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedCount
-INTO storageblob
-FROM iothub
-
-SELECT
     *,
     iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
 INTO notificationshub
@@ -55,7 +16,7 @@ SELECT
     iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
 INTO alertshub
 FROM iothub
--- WHERE isalert > 0
+WHERE isalert IS NOT NULL
 
 SELECT
     *,

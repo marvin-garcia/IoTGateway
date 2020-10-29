@@ -11,10 +11,6 @@
             "subType": "Input"
         },
         {
-            "filePath": "Outputs/storageblob.json",
-            "subType": "Output"
-        },
-        {
             "filePath": "Outputs/notificationshub.json",
             "subType": "Output"
         },
