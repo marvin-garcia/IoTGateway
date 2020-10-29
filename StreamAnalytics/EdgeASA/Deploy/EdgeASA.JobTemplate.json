@@ -145,7 +145,7 @@
       "properties": {},
       "resources": [
         {
-          "type": "blobServices/containers",
+          "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
           "apiVersion": "2019-06-01",
           "name": "[parameters('storageContainerName')]",
           "dependsOn": [
