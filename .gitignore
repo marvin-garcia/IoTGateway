@@ -373,3 +373,4 @@ LogicApps/NotificationsApp/LogicApp.parameters.json
 TimeSeriesInsights/azuredeploy.parameters.json
 StreamAnalytics/EdgeASA/Inputs/iothub.json
 StreamAnalytics/SampleOpcOutput.json
+Templates/azuredeploy.parameters.json
