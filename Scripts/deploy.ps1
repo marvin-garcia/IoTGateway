@@ -51,6 +51,7 @@ function New-IIoTEnvironment(
     $edge_vm_username = $vm_username
     $edge_vm_password = $vm_password
     $edge_vm_dns = "$($edge_vm_name)-$($env_hash)"
+    $published_nodes_path = "/appdata/publishednodes.json"
 
     # virtual network parameters
     $vnet_name = "iiot-$($env_hash)-vnet"
@@ -111,6 +112,7 @@ function New-IIoTEnvironment(
         #"simVmDnsName" = @{ "value" = $sim_vm_dns }
         "edgeVmName" = @{ "value" = $edge_vm_name }
         "edgeVmSize" = @{ "value" = $edge_vm_size }
+        "edgeVmPublishedNodesPath" = @{ "value" = $published_nodes_path }
         #"edgeVmDnsName" = @{ "value" = $edge_vm_dns }
         "adminUsername" = @{ "value" = $sim_vm_username }
         "adminPassword" = @{ "value" = $sim_vm_password }
@@ -127,6 +129,7 @@ function New-IIoTEnvironment(
         #"datalakeContainerName" = @{ "value" = $persistent_storage_container }
         #"eventHubNamespaceName" = @{ "value" = $eh_name }
         "eventHubRetentionInDays" = @{ "value" = $eventhubs_message_retention }
+        "deployTsiEnvironment"= @{ "value" = $deploy_time_series_insights }
         #"tsiEnvironmentName" = @{ "value" =  $tsi_name }
         "tsiEnvironmentSku" = @{ "value" =  $tsi_sku }
         "tsiEnvironmentKind" = @{ "value" =  $tsi_kind }

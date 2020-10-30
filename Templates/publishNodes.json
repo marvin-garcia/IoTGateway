@@ -61,7 +61,7 @@
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('pwsh -File ./publishNodes.ps1 -serverFqdn ', parameters('opcServerFqdn'), ' -serverPorts ', parameters('opcPorts'), ' -opcNodesPath ./opcnodes.json', ' -publishedNodesPath ', parameters('publishedNodesPath'))]"
+          "commandToExecute": "[concat('sudo pwsh -File ./publishNodes.ps1 -serverFqdn ', parameters('opcServerFqdn'), ' -serverPorts ', parameters('opcPorts'), ' -opcNodesPath ./opcnodes.json', ' -publishedNodesPath ', parameters('publishedNodesPath'))]"
         }
       },
       "dependsOn": []

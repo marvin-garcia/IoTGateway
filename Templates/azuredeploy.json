@@ -41,6 +41,13 @@
         "description": "IoT edge virtual machine size."
       }
     },
+    "edgeVmPublishedNodesPath": {
+      "type": "string",
+      "defaultValue": "/appdata/publishednodes.json",
+      "metadata": {
+        "description": "Absolute path for OPC published nodes Json file inside the IoT edge VM."
+      }
+    },
     "adminUsername": {
       "type": "string",
       "metadata": {
@@ -836,17 +843,52 @@
           "fileUris": [
             "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/dps-enroll.ps1')]",
             "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.ps1')]",
-            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.sh')]",
-            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/EdgeSolution/modules/OPC/publishednodes.json')]"
+            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.sh')]"
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"', ' && sudo mkdir -p /appdata && sudo mv publishednodes.json /appdata/publishednodes.json')]"
+          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"')]"
         }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', parameters('edgeVmName'))]",
         "[variables('dpsResourceId')]"
+      ]
+    },
+    {
+      "comments": "One time deployment to set OPC publish nodes Json file in IoT edge VM.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "publishednodes",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "edgeVmName": {
+            "value": "[parameters('edgeVmName')]"
+          },
+          "opcServerFqdn": {
+            "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('simNetworkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+          },
+          "opcPorts": {
+            "value": "51200,51201,51202"
+          },
+          "publishedNodesPath": {
+            "value": "[parameters('edgeVmPublishedNodesPath')]"
+          },
+          "templateUrl": {
+            "value":"[parameters('templateUrl')]"
+          },
+          "branchName": {
+            "value": "[parameters('branchName')]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Templates/publishNodes.json')]"
+        }
+      },
+      "dependsOn": [
+        "[concat(resourceId('Microsoft.Compute/virtualMachines', parameters('edgeVmName')), '/extensions/scriptextensions')]"
       ]
     },
     {
