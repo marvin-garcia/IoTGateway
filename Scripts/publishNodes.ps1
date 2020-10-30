@@ -24,4 +24,9 @@ foreach ($port in $serverPortList)
     }
 }
 
-Set-Content -Path $publishedNodesPath -Value (ConvertTo-Json -InputObject $publishedNodes -Depth 5)
+$filePath = Split-Path $publishedNodesPath -ErrorAction Stop
+if (!Test-Path -Path $filePath -ErrorAction Stop)
+{
+    New-Item -Path $filePath -ItemType directory -ErrorAction Stop
+}
+Set-Content -Path $publishedNodesPath -Value (ConvertTo-Json -InputObject $publishedNodes -Depth 5 -ErrorAction Stop) -ErrorAction Stop
