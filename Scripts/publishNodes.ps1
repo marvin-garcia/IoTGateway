@@ -25,7 +25,7 @@ foreach ($port in $serverPortList)
 }
 
 $filePath = Split-Path $publishedNodesPath -ErrorAction Stop
-if (!Test-Path -Path $filePath -ErrorAction Stop)
+if (!(Test-Path -Path $filePath -ErrorAction Stop))
 {
     New-Item -Path $filePath -ItemType directory -ErrorAction Stop
 }
