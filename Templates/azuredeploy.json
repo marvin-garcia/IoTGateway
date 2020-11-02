@@ -15,6 +15,48 @@
         "description": "Unique alphanumeric id to assign to multiple resource names."
       }
     },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "iiot-vnet",
+      "metadata": {
+        "description": "Name for the virtual network."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix for the virtual network."
+      }
+    },
+    "simSubnetName": {
+      "type": "string",
+      "defaultValue": "opcsim",
+      "metadata": {
+        "description": "Name for the OPC sim VM subnet."
+      }
+    },
+    "simSubnetAddressRange": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Address range for the OPC sim subnet."
+      }
+    },
+    "edgeSubnetName": {
+      "type": "string",
+      "defaultValue": "iotedge",
+      "metadata": {
+        "description": "Name for the IoT edge VM subnet."
+      }
+    },
+    "edgeSubnetAddressRange": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Address range for the IoT edge VM subnet."
+      }
+    },
     "simVmName": {
       "type": "string",
       "metadata": {
@@ -206,6 +248,12 @@
         "description": "Whether to create a Time Series Insights Environment"
       }
     },
+    "tsiEnvironmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the Time Series Insights environment"
+      }
+    },
     "tsiEnvironmentSku": {
       "type": "string",
       "defaultValue": "L1",
@@ -302,6 +350,74 @@
       "defaultValue": "P7D",
       "metadata": {
         "description": "ISO duration between 7 and 31 days. Remove the 'warmStoreConfiguration' property from the envrionment to delete the warm store."
+      }
+    },
+    "adxClusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Data Factory cluster name."
+      }
+    },
+    "adxClusterSku": {
+      "type": "string",
+      "defaultValue": "Dev(No SLA)_Standard_E2a_v4",
+      "metadata": {
+        "description": "Azure Data Factory cluster Sku."
+      }
+    },
+    "adxClusterTier": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "metadata": {
+        "description": "Azure Data Factory cluster tier."
+      }
+    },
+    "adxClusterCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 6,
+      "metadata": {
+        "description": "Azure Data Factory cluster capacity."
+      }
+    },
+    "adxDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Data Factory database name."
+      }
+    },
+    "adxAccessPolicyPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Principal id to grant access rights to the Azure Data Explorer cluster. For users, the value should be in the form of 'user@contoso.com'."
+      }
+    },
+    "adxAccessPolicyPrincipalType": {
+      "type": "string",
+      "defaultValue": "User",
+      "metadata": {
+        "description": "Principal type to grant access rights to the Azure Data Explorer cluster."
+      }
+    },
+    "adxAccessPolicyRole": {
+      "type": "string",
+      "defaultValue": "Admin",
+      "metadata": {
+        "description": "Access level granted to the user for the Azure Data Explorer cluster."
+      }
+    },
+    "adxAccessPrincipalAssignmentId": {
+      "type": "string",
+      "defaultValue": "[newGuid()]",
+      "metadata": {
+        "description": "Unique Id to assign to the Azure Data Explorer cluster acess."
+      }
+    },
+    "edgeASAJobName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the edge stream analytics job."
       }
     },
     "edgeASAJobQuery": {
@@ -444,19 +560,12 @@
   "variables": {
     "simVmDnsName": "[concat(parameters('simVmName'), '-', parameters('environmentHashId'))]",
     "edgeVmDnsName": "[concat(parameters('edgeVmName'), '-', parameters('environmentHashId'))]",
-    "vnetName": "[concat('vnet-', parameters('environmentHashId'))]",
-    "simSubnetName": "opcsim",
-    "edgeSubnetName": "iotedge",
-    "vnetAddressPrefix": "10.0.0.0/16",
-    "simSubnetAddressRange": "10.0.0.0/24",
-    "edgeSubnetAddressRange": "10.0.1.0/24",
     "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
     "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
     "datalakeName": "[concat('telemetrystorage', parameters('environmentHashId'))]",
     "datalakeContainerName": "telemetry",
     "eventHubNamespaceName": "[concat('eh-', parameters('environmentHashId'))]",
-    "tsiEnvironmentName": "[concat('tsi-', parameters('environmentHashId'))]",
     "tsiStorageAccountName": "[concat('tsistorage', parameters('environmentHashId'))]",
     "simPublicIPAddressName": "[concat(parameters('simVmName'), '-ip')]",
     "simNetworkInterfaceName": "[concat(parameters('simVmName'), '-nic')]",
@@ -468,6 +577,7 @@
     "industrialIoTBranchName": "master",
     "industrialIoTSimulationProfile": "default",
     "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+    "iotHubEventsRoute": "events",
     "iotHubStorageEndpointName": "persistentstorage",
     "iotHubOwnerPolicyName": "iothubowner",
     "iotHubServicePolicyName": "serviceconnect",
@@ -479,11 +589,11 @@
     "eventHubTelemetryName": "telemetry",
     "eventHubNotificationsName": "notifications",
     "eventHubAlertsName": "alerts",
-    "dataExplorerConsumerGroupName": "dataexplorer",
     "tsiConsumerGroupName": "timeseriesinsights",
     "logicAppConsumerGroupName": "logicapp",
     "tsiTelemetrySourceName": "telemetryhub",
     "tsiAlertsSourceName": "alertshub",
+    "adxConsumerGroupName": "dataexplorer",
     "eventGridNotificationsTopicName": "[concat('eg-notifications-', parameters('environmentHashId'))]",
     "eventGridNotificationsSubscriptionName": "notifications",
     "eventGridNotificationsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridNotificationsTopicName'))]",
@@ -492,7 +602,6 @@
     "eventGridAlertsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName'))]",
     "notificationsLogicAppName": "NotificationsApp",
     "alertsLogicAppName": "AlertsApp",
-    "edgeASAJobName": "[concat('asa-edge-', parameters('environmentHashId'))]",
     "edgeASAStorageAccountName": "[concat('asaedgestrg', parameters('environmentHashId'))]",
     "edgeASAStorageContainerName": "asaedge",
     "cloudASAJobName": "[concat('asa-cloud-', parameters('environmentHashId'))]"
@@ -585,7 +694,7 @@
       "comments": "IoT virtual network",
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2020-05-01",
-      "name": "[variables('vnetName')]",
+      "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]",
@@ -594,23 +703,23 @@
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('vNetAddressPrefix')]"
+            "[parameters('vNetAddressPrefix')]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('simSubnetName')]",
+            "name": "[parameters('simSubnetName')]",
             "properties": {
-              "addressPrefix": "[variables('simSubnetAddressRange')]",
+              "addressPrefix": "[parameters('simSubnetAddressRange')]",
               "networkSecurityGroup": {
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]"
               }
             }
           },
           {
-            "name": "[variables('edgeSubnetName')]",
+            "name": "[parameters('edgeSubnetName')]",
             "properties": {
-              "addressPrefix": "[variables('edgeSubnetAddressRange')]",
+              "addressPrefix": "[parameters('edgeSubnetAddressRange')]",
               "networkSecurityGroup": {
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('edgeNetworkSecurityGroupName'))]"
               }
@@ -627,7 +736,7 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('simPublicIPAddressName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]"
       ],
       "properties": {
@@ -640,7 +749,7 @@
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('simPublicIPAddressName'))]"
               },
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('simSubnetName'))]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('simSubnetName'))]"
               }
             }
           }
@@ -762,7 +871,7 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('edgePublicIPAddressName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('edgeNetworkSecurityGroupName'))]"
       ],
       "properties": {
@@ -775,7 +884,7 @@
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('edgePublicIPAddressName'))]"
               },
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('edgeSubnetName'))]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('edgeSubnetName'))]"
               }
             }
           }
@@ -997,6 +1106,15 @@
                 "[variables('iotHubStorageEndpointName')]"
               ],
               "isEnabled": true
+            },
+            {
+                "name": "[variables('iotHubEventsRoute')]",
+                "source": "DeviceMessages",
+                "condition": "true",
+                "endpointNames": [
+                    "events"
+                ],
+                "isEnabled": true
             }
           ],
           "fallbackRoute": {
@@ -1133,7 +1251,7 @@
       "comments": "Consumer group for telemetry data for Azure Data Explorer",
       "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
       "apiVersion": "2017-04-01",
-      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubTelemetryName'), '/', variables('dataExplorerConsumerGroupName'))]",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubTelemetryName'), '/', variables('adxConsumerGroupName'))]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
@@ -1234,7 +1352,7 @@
       "condition": "[parameters('deployTsiEnvironment')]",
       "apiVersion": "2020-05-15",
       "type": "Microsoft.TimeSeriesInsights/environments",
-      "name": "[variables('tsiEnvironmentName')]",
+      "name": "[parameters('tsiEnvironmentName')]",
       "kind": "[parameters('tsiEnvironmentKind')]",
       "location": "[parameters('location')]",
       "sku": {
@@ -1255,14 +1373,14 @@
         {
           "apiVersion": "2020-05-15",
           "type": "Microsoft.TimeSeriesInsights/environments/accesspolicies",
-          "name": "[concat(variables('tsiEnvironmentName'), '/', 'ownerAccessPolicyName')]",
+          "name": "[concat(parameters('tsiEnvironmentName'), '/', 'ownerAccessPolicyName')]",
           "condition": "[not(empty(parameters('tsiAccessPolicyObjectId')))]",
           "properties": {
             "principalObjectId": "[parameters('tsiAccessPolicyObjectId')]",
             "roles": "[parameters('tsiAccessPolicyRoles')]"
           },
           "dependsOn": [
-            "[concat('Microsoft.TimeSeriesInsights/environments/', variables('tsiEnvironmentName'))]"
+            "[concat('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
           ]
         },
         {
@@ -1272,7 +1390,7 @@
           "name": "[variables('tsiTelemetrySourceName')]",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[resourceId('Microsoft.TimeSeriesInsights/environments/', variables('tsiEnvironmentName'))]"
+            "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
           ],
           "properties": {
             "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]",
@@ -1291,7 +1409,7 @@
           "name": "[variables('tsiAlertsSourceName')]",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[resourceId('Microsoft.TimeSeriesInsights/environments/', variables('tsiEnvironmentName'))]"
+            "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
           ],
           "properties": {
             "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubAlertsName'))]",
@@ -1308,6 +1426,77 @@
         "[concat('Microsoft.Storage/storageAccounts/', variables('tsiStorageAccountName'))]",
         "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
       ]
+    },
+    {
+      "comments": "Deploy Azure Data Explorer cluster",
+      "type": "Microsoft.Kusto/Clusters",
+      "apiVersion": "2020-06-14",
+      "name": "[parameters('adxClusterName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('adxClusterSku')]",
+        "tier": "[parameters('adxClusterTier')]",
+        "capacity": "[parameters('adxClusterCapacity')]"
+      },
+      "properties": {
+        "trustedExternalTenants": [],
+        "enableDiskEncryption": false,
+        "enableStreamingIngest": true,
+        "enablePurge": true,
+        "enableDoubleEncryption": false
+      }
+    },
+    {
+      "comments": "Deploy Azure Data Explorer database",
+      "type": "Microsoft.Kusto/Clusters/Databases",
+      "apiVersion": "2020-06-14",
+      "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]"
+      ],
+      "kind": "ReadWrite",
+      "properties": {
+        "softDeletePeriod": "P3650D",
+        "hotCachePeriod": "P31D"
+      }
+    },
+    // {
+    //   "comments": "Set up Azure Data Explorer database connection",
+    //   "type": "Microsoft.Kusto/Clusters/Databases/DataConnections",
+    //   "apiVersion": "2020-06-14",
+    //   "name": "[variables('adxDatabaseConnectionName')]",
+    //   "location": "[parameters('location')]",
+    //   "dependsOn": [
+    //     "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
+    //     "[resourceId('Microsoft.Kusto/Clusters/Databases', concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName')))]"
+    //   ],
+    //   "kind": "EventHub",
+    //   "properties": {
+    //     "eventHubResourceId": "[concat(variables('eventHubNamespaceName'), '/eventhubs/', variables('eventHubTelemetryName'))]",
+    //     "consumerGroup": "[variables('adxConsumerGroupName')]",
+    //     "tableName": "[variables('adxDatabaseTableName')]",
+    //     "mappingRuleName": "TelemetryMapping",
+    //     "dataFormat": "JSON",
+    //     "eventSystemProperties": [],
+    //     "compression": "None",
+    //     "provisioningState": "Succeeded"
+    //   }
+    // },
+    {
+      "type": "Microsoft.Kusto/Clusters/Databases/PrincipalAssignments",
+      "apiVersion": "2020-06-14",
+      "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'), '/', parameters('adxAccessPrincipalAssignmentId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
+        "[resourceId('Microsoft.Kusto/Clusters/Databases', parameters('adxClusterName'), parameters('adxDatabaseName'))]"
+      ],
+      "properties": {
+        "principalId": "[parameters('adxAccessPolicyPrincipalId')]",
+        "role": "[parameters('adxAccessPolicyRole')]",
+        "principalType": "[parameters('adxAccessPolicyPrincipalType')]",
+        "tenantId": "[subscription().tenantId]"
+      }
     },
     {
       "comments": "Notifications event grid topic",
@@ -1447,7 +1636,7 @@
       "comments": "Deploy edge stream analytics job.",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2019-08-01",
-      "name": "[variables('edgeASAJobName')]",
+      "name": "[parameters('edgeASAJobName')]",
       "properties": {
         "mode": "Incremental",
         "parameters": {
@@ -1455,7 +1644,7 @@
             "value": "[parameters('location')]"
           },
           "StreamAnalyticsJobName": {
-            "value": "[variables('edgeASAJobName')]"
+            "value": "[parameters('edgeASAJobName')]"
           },
           "EventsLateArrivalMaxDelayInSeconds": {
             "value": 5
@@ -1620,7 +1809,7 @@
       "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
     },
     "tsiDataAccessFQDN": {
-      "value": "[reference(resourceId('Microsoft.TimeSeriesInsights/environments', variables('tsiEnvironmentName'))).dataAccessFQDN]",
+      "value": "[reference(resourceId('Microsoft.TimeSeriesInsights/environments', parameters('tsiEnvironmentName'))).dataAccessFQDN]",
       "type": "string"
     }
   }
