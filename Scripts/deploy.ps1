@@ -41,16 +41,10 @@ function New-IIoTEnvironment(
 
     # OPC Sim VM parameters
     $sim_vm_name = "opc-sim"
-    $sim_vm_username = $vm_username
-    $sim_vm_password = $vm_password
     # $sim_vm_dns = "$($sim_vm_name)-$($env_hash)"
     
     # IoT Edge VM parameters
     $edge_vm_name = "linuxgateway-1"
-    $edge_device_id = $edge_vm_name
-    $edge_vm_username = $vm_username
-    $edge_vm_password = $vm_password
-    $edge_vm_dns = "$($edge_vm_name)-$($env_hash)"
     $published_nodes_path = "/appdata/publishednodes.json"
 
     # virtual network parameters
@@ -62,27 +56,26 @@ function New-IIoTEnvironment(
     # $edge_subnet_prefix = "10.0.1.0/24"
 
     # datalake storage
-    $persistent_storage_name = "telemetrystrg$($env_hash)"
-    $persistent_storage_container = "telemetry"
+    # $persistent_storage_name = "telemetrystrg$($env_hash)"
+    # $persistent_storage_container = "telemetry"
 
     # event hubs
-    $eh_name = "eh-$($env_hash)"
-    $eh_notifications_name = "notifications"
-    $eh_notifications_la_consumer_group = "logicapp"
-    $eh_alerts_name = "alerts"
-    $eh_alerts_la_consumer_group = "logicapp"
-    $eh_alerts_tsi_consumer_group = "timeseriesinsights"
-    $eh_telemetry_name = "telemetry"
-    $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
-    $eh_send_policy_name = "send"
-    $eh_listen_policy_name = "listen"
+    # $eh_name = "eh-$($env_hash)"
+    # $eh_notifications_name = "notifications"
+    # $eh_notifications_la_consumer_group = "logicapp"
+    # $eh_alerts_name = "alerts"
+    # $eh_alerts_la_consumer_group = "logicapp"
+    # $eh_alerts_tsi_consumer_group = "timeseriesinsights"
+    # $eh_telemetry_name = "telemetry"
+    # $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
+    # $eh_send_policy_name = "send"
+    # $eh_listen_policy_name = "listen"
 
     # time series insights
     $tsi_name = "tsi-$($env_hash)"
     $tsi_sku = "L1"
     $tsi_capacity = 1
     $tsi_kind = "LongTerm"
-    $tsi_storage_account = "tsistorage$($env_hash)"
     $tsi_timestamp_property = "SourceTimestamp"
     $tsi_id_properties = @(
         @{ "name" = "ApplicationUri"; "type" = "string" }
@@ -120,8 +113,8 @@ function New-IIoTEnvironment(
         "edgeVmName" = @{ "value" = $edge_vm_name }
         "edgeVmSize" = @{ "value" = $edge_vm_size }
         "edgeVmPublishedNodesPath" = @{ "value" = $published_nodes_path }
-        "adminUsername" = @{ "value" = $sim_vm_username }
-        "adminPassword" = @{ "value" = $sim_vm_password }
+        "adminUsername" = @{ "value" = $vm_username }
+        "adminPassword" = @{ "value" = $vm_password }
         "vnetName" = @{ "value" = $vnet_name }
         "vnetAddressPrefix" = @{ "value" = $vnet_prefix }
         "simSubnetName" = @{ "value" = $sim_subnet_name}
