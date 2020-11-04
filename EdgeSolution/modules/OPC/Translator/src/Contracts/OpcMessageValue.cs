@@ -8,7 +8,7 @@ namespace MicrosoftSolutions.IoT.Edge.OpcToDtdl.Contracts
     /// </summary>
     internal class OpcMessageValue {
         [JsonProperty("Value")]
-        public double Value { get; set; }
+        public object Value { get; set; }
         [JsonProperty("SourceTimestamp")]
         public DateTime SourceTimestamp { get; set; }
     }

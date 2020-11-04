@@ -1,0 +1,26 @@
+SELECT
+    *,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+INTO notificationshub
+FROM iothub
+WHERE AlternatingBoolean > 0
+
+SELECT
+    nodeid AS NodeId,
+    applicationuri AS ApplicationUri,
+    sourcetimestamp AS SourceTimestamp,
+    tag AS Tag,
+    value AS Value,
+    isalert AS IsAlert,
+    anomalyscore AS AnomalyScore,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+INTO alertshub
+FROM iothub
+WHERE isalert IS NOT NULL
+
+SELECT
+    *,
+    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+INTO telemetryhub
+FROM iothub
+WHERE isalert IS NULL

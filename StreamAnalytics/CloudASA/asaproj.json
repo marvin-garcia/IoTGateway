@@ -1,0 +1,26 @@
+{
+    "name": "CloudASA",
+    "startFile": "CloudASA.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Inputs/iothub.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Outputs/notificationshub.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/alertshub.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/telemetryhub.json",
+            "subType": "Output"
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "Name": "iothub",
+    "Type": "Data Stream",
+    "DataSourceType": "IoT Hub",
+    "IoTHubProperties": {
+        "IotHubNamespace": "[required]",
+        "EndPoint": "messages/events",
+        "SharedAccessPolicyName": "[required]",
+        "SharedAccessPolicyKey": "[required]",
+        "ConsumerGroupName": "[required]"
+    },
+    "DataSourceCredentialDomain": "",
+    "Serialization": {
+        "Type": "Json",
+        "Encoding": "UTF8",
+        "FieldDelimiter": null
+    },
+    "PartitionKey": null,
+    "CompressionType": "None",
+    "ScriptType": "Input"
+}

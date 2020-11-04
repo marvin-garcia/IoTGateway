@@ -1,0 +1,305 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ASAApiVersion": {
+      "type": "string",
+      "defaultValue": "2017-04-01-preview",
+      "allowedValues": [
+        "2017-04-01-preview",
+        "2016-03-01"
+      ]
+    },
+    "StreamAnalyticsJobName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 63,
+      "metadata": {
+        "description": "Stream Analytics Job Name, can contain alphanumeric characters and hypen and must be 3-63 characters long"
+      }
+    },
+    "Location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "OutputStartMode": {
+      "type": "string",
+      "defaultValue": "JobStartTime",
+      "allowedValues": [
+        "JobStartTime",
+        "CustomTime",
+        "LastOutputEventTime"
+      ]
+    },
+    "OutputStartTime": {
+      "type": "string",
+      "defaultValue": "2019-01-01T00:00:00Z"
+    },
+    "DataLocale": {
+      "type": "string",
+      "defaultValue": "en-US"
+    },
+    "OutputErrorPolicy": {
+      "type": "string",
+      "defaultValue": "Stop",
+      "allowedValues": [
+        "Drop",
+        "Stop"
+      ]
+    },
+    "EventsLateArrivalMaxDelayInSeconds": {
+      "type": "int"
+    },
+    "EventsOutOfOrderMaxDelayInSeconds": {
+      "type": "int"
+    },
+    "EventsOutOfOrderPolicy": {
+      "type": "string",
+      "defaultValue": "Adjust",
+      "allowedValues": [
+        "Adjust",
+        "Drop"
+      ]
+    },
+    "StreamingUnits": {
+      "type": "int",
+      "minValue": 1,
+      "maxValue": 192,
+      "metadata": {
+        "description": "Number of Streaming Units"
+      },
+      "allowedValues": [
+        1,
+        3,
+        6,
+        12,
+        18,
+        24,
+        30,
+        36,
+        42,
+        48,
+        54,
+        60,
+        66,
+        72,
+        78,
+        84,
+        90,
+        96,
+        102,
+        108,
+        114,
+        120,
+        126,
+        132,
+        138,
+        144,
+        150,
+        156,
+        162,
+        168,
+        174,
+        180,
+        186,
+        192
+      ]
+    },
+    "CompatibilityLevel": {
+      "type": "string",
+      "defaultValue": "1.2",
+      "allowedValues": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ]
+    },
+    "query": {
+      "type": "string"
+    },
+    "Input_iothub_iotHubNamespace": {
+      "type": "string"
+    },
+    "Input_iothub_consumerGroupName": {
+      "type": "string"
+    },
+    "Input_iothub_endpoint": {
+      "type": "string"
+    },
+    "Input_iothub_sharedAccessPolicyName": {
+      "type": "string"
+    },
+    "Input_iothub_sharedAccessPolicyKey": {
+      "type": "string"
+    },
+    "Output_notificationshub_serviceBusNamespace": {
+      "type": "string"
+    },
+    "Output_notificationshub_eventHubName": {
+      "type": "string"
+    },
+    "Output_notificationshub_partitionKey": {
+      "type": "string"
+    },
+    "Output_notificationshub_sharedAccessPolicyName": {
+      "type": "string"
+    },
+    "Output_notificationshub_sharedAccessPolicyKey": {
+      "type": "string"
+    },
+    "Output_alertshub_serviceBusNamespace": {
+      "type": "string"
+    },
+    "Output_alertshub_eventHubName": {
+      "type": "string"
+    },
+    "Output_alertshub_partitionKey": {
+      "type": "string"
+    },
+    "Output_alertshub_sharedAccessPolicyName": {
+      "type": "string"
+    },
+    "Output_alertshub_sharedAccessPolicyKey": {
+      "type": "string"
+    },
+    "Output_telemetryhub_serviceBusNamespace": {
+      "type": "string"
+    },
+    "Output_telemetryhub_eventHubName": {
+      "type": "string"
+    },
+    "Output_telemetryhub_partitionKey": {
+      "type": "string"
+    },
+    "Output_telemetryhub_sharedAccessPolicyName": {
+      "type": "string"
+    },
+    "Output_telemetryhub_sharedAccessPolicyKey": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.StreamAnalytics/StreamingJobs",
+      "apiVersion": "[parameters('ASAApiVersion')]",
+      "name": "[parameters('StreamAnalyticsJobName')]",
+      "location": "[parameters('Location')]",
+      "properties": {
+        "outputStartMode": "[parameters('OutputStartMode')]",
+        "outputStartTime": "[if(equals(parameters('OutputStartMode'),'CustomTime'), parameters('OutputStartTime'), json('null'))]",
+        "sku": {
+          "name": "standard"
+        },
+        "jobType": "Cloud",
+        "eventsOutOfOrderPolicy": "[parameters('EventsOutOfOrderPolicy')]",
+        "outputErrorPolicy": "[parameters('OutputErrorPolicy')]",
+        "eventsOutOfOrderMaxDelayInSeconds": "[parameters('EventsOutOfOrderMaxDelayInSeconds')]",
+        "eventsLateArrivalMaxDelayInSeconds": "[parameters('EventsLateArrivalMaxDelayInSeconds')]",
+        "dataLocale": "[parameters('DataLocale')]",
+        "compatibilityLevel": "[parameters('CompatibilityLevel')]",
+        "transformation": {
+          "name": "Transformation",
+          "properties": {
+            "streamingUnits": "[parameters('StreamingUnits')]",
+            "query": "[parameters('query')]"
+          }
+        },
+        "inputs": [
+          {
+            "name": "iothub",
+            "properties": {
+              "type": "Stream",
+              "datasource": {
+                "type": "Microsoft.Devices/IotHubs",
+                "properties": {
+                  "iotHubNamespace": "[parameters('Input_iothub_iotHubNamespace')]",
+                  "consumerGroupName": "[parameters('Input_iothub_consumerGroupName')]",
+                  "endpoint": "[parameters('Input_iothub_endpoint')]",
+                  "sharedAccessPolicyName": "[parameters('Input_iothub_sharedAccessPolicyName')]",
+                  "sharedAccessPolicyKey": "[parameters('Input_iothub_sharedAccessPolicyKey')]"
+                }
+              },
+              "compression": {
+                "type": "None"
+              },
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8"
+                }
+              }
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "notificationshub",
+            "properties": {
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
+                }
+              },
+              "datasource": {
+                "type": "Microsoft.ServiceBus/EventHub",
+                "properties": {
+                  "serviceBusNamespace": "[parameters('Output_notificationshub_serviceBusNamespace')]",
+                  "eventHubName": "[parameters('Output_notificationshub_eventHubName')]",
+                  "partitionKey": "[parameters('Output_notificationshub_partitionKey')]",
+                  "sharedAccessPolicyName": "[parameters('Output_notificationshub_sharedAccessPolicyName')]",
+                  "sharedAccessPolicyKey": "[parameters('Output_notificationshub_sharedAccessPolicyKey')]"
+                }
+              }
+            }
+          },
+          {
+            "name": "alertshub",
+            "properties": {
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
+                }
+              },
+              "datasource": {
+                "type": "Microsoft.ServiceBus/EventHub",
+                "properties": {
+                  "serviceBusNamespace": "[parameters('Output_alertshub_serviceBusNamespace')]",
+                  "eventHubName": "[parameters('Output_alertshub_eventHubName')]",
+                  "partitionKey": "[parameters('Output_alertshub_partitionKey')]",
+                  "sharedAccessPolicyName": "[parameters('Output_alertshub_sharedAccessPolicyName')]",
+                  "sharedAccessPolicyKey": "[parameters('Output_alertshub_sharedAccessPolicyKey')]"
+                }
+              }
+            }
+          },
+          {
+            "name": "telemetryhub",
+            "properties": {
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
+                }
+              },
+              "datasource": {
+                "type": "Microsoft.ServiceBus/EventHub",
+                "properties": {
+                  "serviceBusNamespace": "[parameters('Output_telemetryhub_serviceBusNamespace')]",
+                  "eventHubName": "[parameters('Output_telemetryhub_eventHubName')]",
+                  "partitionKey": "[parameters('Output_telemetryhub_partitionKey')]",
+                  "sharedAccessPolicyName": "[parameters('Output_telemetryhub_sharedAccessPolicyName')]",
+                  "sharedAccessPolicyKey": "[parameters('Output_telemetryhub_sharedAccessPolicyKey')]"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

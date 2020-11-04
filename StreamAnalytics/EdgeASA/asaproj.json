@@ -1,0 +1,22 @@
+{
+    "name": "EdgeASA",
+    "startFile": "EdgeASA.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Inputs/streaminput.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Outputs/alertsoutput.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/telemetryoutput.json",
+            "subType": "Output"
+        }
+    ]
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "EndpointUrl": "opc.tcp://10.0.0.4:51200/",
+    "UseSecurity": false,
+    "OpcNodes": [
+      {
+        "Id": "ns=2;s=DipData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "DipData"
+      },
+      {
+        "Id": "ns=2;s=SpikeData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "SpikeData"
+      },
+      {
+        "Id": "ns=2;s=AlternatingBoolean",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "AlternatingBoolean"
+      },
+      {
+        "Id": "ns=2;s=NegativeTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "NegativeTrendData"
+      },
+      {
+        "Id": "ns=2;s=PositiveTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "PositiveTrendData"
+      },
+      {
+        "Id": "ns=2;s=RandomSignedInt32",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 10000,
+        "DisplayName": "RandomSignedInt32"
+      }
+    ]
+  },
+  {
+    "EndpointUrl": "opc.tcp://10.0.0.4:51201/",
+    "UseSecurity": false,
+    "OpcNodes": [
+      {
+        "Id": "ns=2;s=DipData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "DipData"
+      },
+      {
+        "Id": "ns=2;s=SpikeData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "SpikeData"
+      },
+      {
+        "Id": "ns=2;s=AlternatingBoolean",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "AlternatingBoolean"
+      },
+      {
+        "Id": "ns=2;s=NegativeTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "NegativeTrendData"
+      },
+      {
+        "Id": "ns=2;s=PositiveTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "PositiveTrendData"
+      },
+      {
+        "Id": "ns=2;s=RandomSignedInt32",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 10000,
+        "DisplayName": "RandomSignedInt32"
+      }
+    ]
+  },
+  {
+    "EndpointUrl": "opc.tcp://10.0.0.4:51202/",
+    "UseSecurity": false,
+    "OpcNodes": [
+      {
+        "Id": "ns=2;s=DipData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "DipData"
+      },
+      {
+        "Id": "ns=2;s=SpikeData",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "SpikeData"
+      },
+      {
+        "Id": "ns=2;s=AlternatingBoolean",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "AlternatingBoolean"
+      },
+      {
+        "Id": "ns=2;s=NegativeTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "NegativeTrendData"
+      },
+      {
+        "Id": "ns=2;s=PositiveTrendData",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 30000,
+        "DisplayName": "PositiveTrendData"
+      },
+      {
+        "Id": "ns=2;s=RandomSignedInt32",
+        "OpcSamplingInterval": 5000,
+        "OpcPublishingInterval": 10000,
+        "DisplayName": "RandomSignedInt32"
+      }
+    ]
+  }
+]

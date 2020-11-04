@@ -1,0 +1,37 @@
+{
+  "put": [
+    {
+      "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "timeSeriesId": ["urn:OpcPlc:aa6b5aab6045"],
+      "name": "PLC #1",
+      "hierarchyIds": ["dc355fc5-d757-4281-8e41-0899b2e3c715"],
+      "instanceFields": {
+        "City": "Detroit",
+        "Building": "13",
+        "Area": "5"
+      }
+    },
+    {
+      "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "timeSeriesId": ["urn:OpcPlc:bdd25e728854"],
+      "name": "PLC #3",
+      "hierarchyIds": ["dc355fc5-d757-4281-8e41-0899b2e3c715"],
+      "instanceFields": {
+        "City": "Detroit",
+        "Building": "15",
+        "Area": "51"
+      }
+    },
+    {
+      "typeId": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "timeSeriesId": ["urn:OpcPlc:c290937fbbd9"],
+      "name": "PLC #2",
+      "hierarchyIds": ["dc355fc5-d757-4281-8e41-0899b2e3c715"],
+      "instanceFields": {
+        "City": "Detroit",
+        "Building": "13",
+        "Area": "8"
+      }
+    }
+  ]
+}

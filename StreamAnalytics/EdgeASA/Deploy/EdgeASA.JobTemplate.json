@@ -1,0 +1,248 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ASAApiVersion": {
+      "type": "string",
+      "defaultValue": "2017-04-01-preview",
+      "allowedValues": [
+        "2017-04-01-preview",
+        "2016-03-01"
+      ]
+    },
+    "StreamAnalyticsJobName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 63,
+      "metadata": {
+        "description": "Stream Analytics Job Name, can contain alphanumeric characters and hypen and must be 3-63 characters long"
+      }
+    },
+    "Location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "OutputStartMode": {
+      "type": "string",
+      "defaultValue": "JobStartTime",
+      "allowedValues": [
+        "JobStartTime",
+        "CustomTime",
+        "LastOutputEventTime"
+      ]
+    },
+    "OutputStartTime": {
+      "type": "string",
+      "defaultValue": "2019-01-01T00:00:00Z"
+    },
+    "DataLocale": {
+      "type": "string",
+      "defaultValue": "en-US"
+    },
+    "OutputErrorPolicy": {
+      "type": "string",
+      "defaultValue": "Stop",
+      "allowedValues": [
+        "Drop",
+        "Stop"
+      ]
+    },
+    "EventsLateArrivalMaxDelayInSeconds": {
+      "type": "int"
+    },
+    "EventsOutOfOrderMaxDelayInSeconds": {
+      "type": "int"
+    },
+    "EventsOutOfOrderPolicy": {
+      "type": "string",
+      "defaultValue": "Adjust",
+      "allowedValues": [
+        "Adjust",
+        "Drop"
+      ]
+    },
+    "CompatibilityLevel": {
+      "type": "string",
+      "defaultValue": "1.2",
+      "allowedValues": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ]
+    },
+    "query": {
+      "type": "string"
+    },
+    "Input_streaminput_Name": {
+      "type": "string"
+    },
+    "Output_1_Name": {
+      "type": "string"
+    },
+    "Output_1_Format": {
+      "type": "string",
+      "defaultValue": "Array",
+      "allowedValues": [
+        "Array",
+        "LineSeparated"
+      ]
+    },
+    "Output_2_Name": {
+      "type": "string"
+    },
+    "Output_2_Format": {
+      "type": "string",
+      "defaultValue": "Array",
+      "allowedValues": [
+        "Array",
+        "LineSeparated"
+      ]
+    },
+    "storageAccountName": {
+      "type": "string"
+    },
+    "storageAccountSku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type for L1 TSI environments."
+      }
+    },
+    "storageAccountKind": {
+      "type": "string",
+      "defaultValue": "StorageV2",
+      "allowedValues": [
+        "BlobStorage",
+        "BlockBlobStorage",
+        "FileStorage",
+        "Storage",
+        "StorageV2"
+      ],
+      "metadata": {
+        "description": "Storage account kind for warm up storage"
+      }
+    },
+    "storageContainerName": {
+      "type": "string",
+      "defaultValue": "asaedge"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[parameters('storageAccountName')]",
+      "apiVersion": "2019-04-01",
+      "location": "[parameters('location')]",
+      "kind": "[parameters('storageAccountKind')]",
+      "sku": {
+        "name": "[parameters('storageAccountSku')]"
+      },
+      "properties": {},
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2019-06-01",
+          "name": "[concat('default/', parameters('storageContainerName'))]",
+          "dependsOn": [
+            "[parameters('storageAccountName')]"
+          ]
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.StreamAnalytics/StreamingJobs",
+      "apiVersion": "[parameters('ASAApiVersion')]",
+      "name": "[parameters('StreamAnalyticsJobName')]",
+      "location": "[parameters('Location')]",
+      "properties": {
+        "outputStartMode": "[parameters('OutputStartMode')]",
+        "outputStartTime": "[if(equals(parameters('OutputStartMode'),'CustomTime'), parameters('OutputStartTime'), json('null'))]",
+        "sku": {
+          "name": "standard"
+        },
+        "jobType": "Edge",
+        "eventsOutOfOrderPolicy": "[parameters('EventsOutOfOrderPolicy')]",
+        "outputErrorPolicy": "[parameters('OutputErrorPolicy')]",
+        "eventsOutOfOrderMaxDelayInSeconds": "[parameters('EventsOutOfOrderMaxDelayInSeconds')]",
+        "eventsLateArrivalMaxDelayInSeconds": "[parameters('EventsLateArrivalMaxDelayInSeconds')]",
+        "dataLocale": "[parameters('DataLocale')]",
+        "compatibilityLevel": "[parameters('CompatibilityLevel')]",
+        "transformation": {
+          "name": "Transformation",
+          "properties": {
+            "query": "[parameters('query')]"
+          }
+        },
+        "package": {
+          "storageAccount": {
+            "accountName": "[parameters('storageAccountName')]",
+            "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+          },
+          "container": "[parameters('storageContainerName')]"
+        },
+        "inputs": [
+          {
+            "name": "[parameters('Input_streaminput_Name')]",
+            "properties": {
+              "type": "Stream",
+              "datasource": {
+                "type": "GatewayMessageBus",
+                "properties": {}
+              },
+              "compression": {
+                "type": "None"
+              },
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8"
+                }
+              }
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "[parameters('Output_1_Name')]",
+            "properties": {
+              "datasource": {
+                "type": "GatewayMessageBus",
+                "properties": {}
+              },
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "[parameters('Output_1_Format')]"
+                }
+              }
+            }
+          },
+          {
+            "name": "[parameters('Output_2_Name')]",
+            "properties": {
+              "datasource": {
+                "type": "GatewayMessageBus",
+                "properties": {}
+              },
+              "serialization": {
+                "type": "Json",
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "[parameters('Output_2_Format')]"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": []
+    }
+  ]
+}

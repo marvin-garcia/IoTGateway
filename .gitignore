@@ -30,6 +30,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+*.dll
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -352,3 +353,24 @@ MigrationBackup/
 **/.vscode
 **/module.json
 DigitalTwins/appsettings.dev.json
+
+# Stream Analytics configuration files
+input-datasource.json
+input-serialization.json
+output-datasource.json
+output-serialization.json
+EdgeSolution/modules/OPC/layered.deployment.json
+**/LocalRunOutputs/
+#StreamAnalytics/**/Inputs/*.json
+#StreamAnalytics/**/Outputs/*.json
+StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.parameters.json
+StreamAnalytics/CloudASA/Deploy/params.json
+StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.parameters.json
+StreamAnalytics/EdgeASA/Inputs/IoTHub.json
+/LogicApps/AlertsApp/LogicApp.parameters.json
+*.deployproj
+LogicApps/NotificationsApp/LogicApp.parameters.json
+TimeSeriesInsights/azuredeploy.parameters.json
+StreamAnalytics/EdgeASA/Inputs/iothub.json
+StreamAnalytics/SampleOpcOutput.json
+Templates/azuredeploy.parameters.json

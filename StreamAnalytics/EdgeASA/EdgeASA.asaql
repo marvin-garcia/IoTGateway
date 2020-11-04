@@ -1,0 +1,39 @@
+WITH AnomalyDetection AS
+(
+	SELECT 
+        NodeId,
+        ApplicationUri,
+        DisplayName,
+        Value.value,
+        System.Timestamp() AS sourcetimestamp,
+		AnomalyDetection_SpikeAndDip(Value.value, 90, 120, 'spikesanddips') OVER(LIMIT DURATION(second, 150) WHEN DisplayName='DipData') AS dipscores,
+        AnomalyDetection_SpikeAndDip(Value.value, 90, 120, 'spikesanddips') OVER(LIMIT DURATION(second, 150) WHEN DisplayName='SpikeData') AS spikescores
+    FROM streaminput
+    WHERE
+        DisplayName = 'DipData'
+    OR
+        DisplayName = 'SpikeData'
+)
+SELECT
+	nodeid,
+    applicationuri,
+    sourcetimestamp,
+    displayname as tag,
+    value,
+    CASE
+        WHEN CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) > 0 THEN CAST(1 AS bigint)
+        WHEN CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0 THEN CAST(1 AS bigint)
+        ELSE CAST(0 AS bigint)
+    END AS isalert,
+    CASE displayname
+        WHEN 'DipData' THEN CAST(GetRecordPropertyValue(dipscores, 'Score') AS float)
+        WHEN 'SpikeData' THEN CAST(GetRecordPropertyValue(spikescores, 'Score') AS float)
+        ELSE CAST(0 AS float)
+    END AS anomalyscore
+INTO alertsoutput
+FROM AnomalyDetection
+
+SELECT 
+    *
+INTO telemetryoutput
+FROM streaminput

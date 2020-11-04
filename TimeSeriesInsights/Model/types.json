@@ -1,0 +1,152 @@
+{
+  "put": [
+    {
+      "id": "1be09af9-f089-4d6b-9f0b-48018b5f7393",
+      "name": "PLC",
+      "variables": {
+        "EventCount": {
+          "kind": "aggregate",
+          "aggregation": {
+            "tsx": "count()"
+          }
+        },
+        "DipData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.DipData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "SpikeData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.SpikeData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "PositiveTrendData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.PositiveTrendData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "NegativeTrendData": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.NegativeTrendData.Double"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "RandomSignedInt32": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "$event.RandomSignedInt32.Long"
+          },
+          "aggregation": {
+            "tsx": "avg($value)"
+          }
+        },
+        "AlternatingBoolean": {
+          "kind": "numeric",
+          "value": {
+            "tsx": "toDouble(iff($event.AlternatingBoolean.Bool, 1, 0))"
+          },
+          "aggregation": {
+            "tsx": "last($value)"
+          }
+        },
+        "DipAlert": {
+          "kind": "categorical",
+          "value": {
+            "tsx": "$event.IsAlert.Long"
+          },
+          "filter": {
+            "tsx": "$event.Tag.String = 'DipData'"
+          },
+          "interpolation": {
+            "kind": "step",
+            "boundary": {
+              "span": "PT5M"
+            }
+          },
+          "categories": [
+            {
+              "label": "Good",
+              "values": [
+                0
+              ],
+              "annotations": {
+                "color": "#258225"
+              }
+            },
+            {
+              "label": "Bad",
+              "values": [
+                1
+              ],
+              "annotations": {
+                "color": "#FF2828"
+              }
+            }
+          ],
+          "defaultCategory": {
+            "label": "Unknown",
+            "annotations": {
+              "color": "rgb(199, 179, 237)"
+            }
+          }
+        },
+        "SpikeAlert": {
+          "kind": "categorical",
+          "value": {
+            "tsx": "$event.IsAlert.Long"
+          },
+          "filter": {
+            "tsx": "$event.Tag.String = 'SpikeData'"
+          },
+          "interpolation": {
+            "kind": "step",
+            "boundary": {
+              "span": "PT5M"
+            }
+          },
+          "categories": [
+            {
+              "label": "Good",
+              "values": [
+                0
+              ],
+              "annotations": {
+                "color": "#258225"
+              }
+            },
+            {
+              "label": "Bad",
+              "values": [
+                1
+              ],
+              "annotations": {
+                "color": "#FF2828"
+              }
+            }
+          ],
+          "defaultCategory": {
+            "label": "Unknown",
+            "annotations": {
+              "color": "rgb(199, 179, 237)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

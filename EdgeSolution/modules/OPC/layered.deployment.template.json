@@ -1,0 +1,50 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules": {
+          "opcPublisher": {
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+                "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
+                "createOptions": "{\"Hostname\":\"opcPublisher\",\"Cmd\":[\"publisher\",\"--aa\",\"--pf=/appdata/publishednodes.json\"],\"HostConfig\":{\"PortBindings\":{\"9080/tcp\":[{\"HostPort\":\"9080\"}]},\"Binds\":[\"/appdata:/appdata\"]}}"
+            }
+          },
+          "opcToDtdl": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "marvingarcia/iotedge-opc-dtdl:latest",
+              "createOptions": "{\"Env\":[\"DefaultApplicationUri=OpcPlc\",\"NodeIdRegex=(.*)\",\"ApplicationUriRegex=(.*)\"]}"
+            }
+          },
+          "streamAnalytics": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+                "image": "mcr.microsoft.com/azure-stream-analytics/azureiotedge:1.0.8",
+                "createOptions": ""
+            },
+            "env": __ASA_ENV__
+          }
+        }
+      },
+      "$edgeHub": {
+        "properties.desired.routes": {
+          "PublisherToStreamAnalytics": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/streamAnalytics/input/__ASA_INPUT_NAME__\")",
+          "StreamAnalyticsToTranslator": "FROM /messages/modules/streamAnalytics/outputs/telemetryoutput INTO BrokeredEndpoint(\"modules/opcToDtdl/inputs/opc\")",
+          "TranslatorToHub": "FROM /messages/modules/opcToDtdl/outputs/dtdl INTO $upstream",
+          "StreamAnalyticsToHub": "FROM /messages/modules/streamAnalytics/outputs/alertsoutput INTO $upstream"
+        }
+      },
+      "streamAnalytics": {
+        "properties.desired": __ASA_DESIRED_PROPERTIES__
+      }
+    }
+  }
+}
