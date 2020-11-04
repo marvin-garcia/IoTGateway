@@ -3,7 +3,8 @@
     "DataSourceType": "GatewayMessageBus",
     "Serialization": {
         "Type": "Json",
-        "Encoding": "UTF8"
+        "Encoding": "UTF8",
+        "format": "Array"
     },
     "ScriptType": "Output"
 }
