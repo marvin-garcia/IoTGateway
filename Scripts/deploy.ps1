@@ -98,7 +98,6 @@ function New-IIoTEnvironment(
 
     # OPC Sim VM parameters
     $sim_vm_name = "opc-sim"
-    # $sim_vm_dns = "$($sim_vm_name)-$($env_hash)"
 
     # We will use VM with at least 1 core and 2 GB of memory for hosting OPC PLC simulatoin containers.
     $simulation_vm_sizes = Get-AzVMSize $script:resourceGroupLocation `
@@ -139,31 +138,9 @@ function New-IIoTEnvironment(
         Write-Host "Using $($edge_vm_size) as VM size for all edge simulation gateway hosts..."
     }
 
-    # virtual network parameters
-    # $vnet_name = "iiot-$($env_hash)-vnet"
-    # $vnet_prefix = "10.0.0.0/16"
-    # $sim_subnet_name = "opc"
-    # $sim_subnet_prefix = "10.0.0.0/24"
-    # $edge_subnet_name = "iotedge"
-    # $edge_subnet_prefix = "10.0.1.0/24"
-
-    # datalake storage
-    # $persistent_storage_name = "telemetrystrg$($env_hash)"
-    # $persistent_storage_container = "telemetry"
-
     # event hubs
     $eventhubs_message_retention = 7
-    # $eh_name = "eh-$($env_hash)"
-    # $eh_notifications_name = "notifications"
-    # $eh_notifications_la_consumer_group = "logicapp"
-    # $eh_alerts_name = "alerts"
-    # $eh_alerts_la_consumer_group = "logicapp"
-    # $eh_alerts_tsi_consumer_group = "timeseriesinsights"
-    # $eh_telemetry_name = "telemetry"
-    # $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
-    # $eh_send_policy_name = "send"
-    # $eh_listen_policy_name = "listen"
-
+    
     # time series insights
     $tsi_name = "tsi-$($env_hash)"
     $tsi_sku = "L1"
@@ -214,12 +191,6 @@ function New-IIoTEnvironment(
         "simSubnetAddressRange" = @{ "value" = $sim_subnet_prefix }
         "edgeSubnetName" = @{ "value" = $edge_subnet_name }
         "edgeSubnetAddressRange" = @{ "value" = $edge_subnet_prefix }
-        #"iotHubName" = @{ "value" = $iot_hub_name }
-        #"dpsName" = @{ "value" = "dps-$($env_hash)" }
-        "branchName" = @{ "value" = "opc-plc" }
-        #"datalakeName" = @{ "value" = $persistent_storage_name }
-        #"datalakeContainerName" = @{ "value" = $persistent_storage_container }
-        #"eventHubNamespaceName" = @{ "value" = $eh_name }
         "eventHubRetentionInDays" = @{ "value" = $eventhubs_message_retention }
         "deployTsiEnvironment"= @{ "value" = $deploy_time_series_insights }
         "tsiEnvironmentName" = @{ "value" =  $tsi_name }
