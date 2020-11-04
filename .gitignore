@@ -365,7 +365,6 @@ EdgeSolution/modules/OPC/layered.deployment.json
 #StreamAnalytics/**/Outputs/*.json
 StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.parameters.json
 StreamAnalytics/CloudASA/Deploy/params.json
-StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.json
 StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.parameters.json
 StreamAnalytics/EdgeASA/Inputs/IoTHub.json
 /LogicApps/AlertsApp/LogicApp.parameters.json
@@ -374,3 +373,4 @@ LogicApps/NotificationsApp/LogicApp.parameters.json
 TimeSeriesInsights/azuredeploy.parameters.json
 StreamAnalytics/EdgeASA/Inputs/iothub.json
 StreamAnalytics/SampleOpcOutput.json
+Templates/azuredeploy.parameters.json

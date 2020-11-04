@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "edgeVmName": {
+      "type": "string",
+      "metadata": {
+        "description": "IoT edge virtual machine name."
+      }
+    },
+    "opcServerFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "fully qualified domain name or IP address for the OPC server."
+      }
+    },
+    "opcPorts": {
+      "type": "string",
+      "metadata": {
+        "description": "Comma-separated OPC ports."
+      }
+    },
+    "publishedNodesPath": {
+      "type": "string",
+      "metadata": {
+        "description": "Destination path for the published nodes Json file."
+      }
+    },
+    "templateUrl": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/marvin-garcia/IoTGateway",
+      "metadata": {
+        "description": "Template URL for the custom scripts."
+      }
+    },
+    "branchName": {
+      "type": "string",
+      "defaultValue": "master",
+      "metadata": {
+        "description": "Repository branch name for the custom scripts."
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "comments": "One time script to configure the OPC published nodes Json file.",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('edgeVmName'), '/', 'scriptextensions')]",
+      "apiVersion": "2019-03-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/EdgeSolution/modules/OPC/opcnodes.json')]",
+            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/publishNodes.ps1')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "[concat('sudo pwsh -File ./publishNodes.ps1 -serverFqdn ', parameters('opcServerFqdn'), ' -serverPorts ', parameters('opcPorts'), ' -opcNodesPath ./opcnodes.json', ' -publishedNodesPath ', parameters('publishedNodesPath'))]"
+        }
+      },
+      "dependsOn": []
+    }
+  ],
+  "outputs": {}
+}

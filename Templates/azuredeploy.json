@@ -1,0 +1,1816 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Specifies the location for all resources."
+      }
+    },
+    "environmentHashId": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique alphanumeric id to assign to multiple resource names."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "iiot-vnet",
+      "metadata": {
+        "description": "Name for the virtual network."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix for the virtual network."
+      }
+    },
+    "simSubnetName": {
+      "type": "string",
+      "defaultValue": "opcsim",
+      "metadata": {
+        "description": "Name for the OPC sim VM subnet."
+      }
+    },
+    "simSubnetAddressRange": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Address range for the OPC sim subnet."
+      }
+    },
+    "edgeSubnetName": {
+      "type": "string",
+      "defaultValue": "iotedge",
+      "metadata": {
+        "description": "Name for the IoT edge VM subnet."
+      }
+    },
+    "edgeSubnetAddressRange": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Address range for the IoT edge VM subnet."
+      }
+    },
+    "simVmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual machine name"
+      }
+    },
+    "simVmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "description"
+      }
+    },
+    "edgeVmName": {
+      "type": "string",
+      "metadata": {
+        "description": "IoT edge virtual machine name."
+      }
+    },
+    "edgeVmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "IoT edge virtual machine size."
+      }
+    },
+    "edgeVmPublishedNodesPath": {
+      "type": "string",
+      "defaultValue": "/appdata/publishednodes.json",
+      "metadata": {
+        "description": "Absolute path for OPC published nodes Json file inside the IoT edge VM."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies a username for the Virtual Machine."
+      }
+    },
+    "adminPassword": {
+      "type": "secureString",
+      "metadata": {
+        "description": "Specifies the username password for the Virtual Machine."
+      }
+    },
+    "iotHubSku": {
+      "type": "string",
+      "defaultValue": "S1",
+      "allowedValues": [
+        "F1",
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "metadata": {
+        "description": "The Azure IoT Hub SKU to use."
+      }
+    },
+    "iotHubCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "The Azure IoT Hub SKU capacity to use."
+      }
+    },
+    "iotHubTier": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "The Azure IoT Hub tier to use."
+      }
+    },
+    "iotHubPartitionCount": {
+      "type": "int",
+      "defaultValue": 4,
+      "metadata": {
+        "description": "The Azure IoT Hub default endpoint partition count."
+      }
+    },
+    "iotHubRetentionInDays": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "The Azure IoT Hub default message retention in days."
+      }
+    },
+    "dpsSku": {
+      "type": "string",
+      "defaultValue": "S1",
+      "allowedValues": [
+        "S1"
+      ],
+      "metadata": {
+        "description": "The Azure Device Provisioning service SKU to use."
+      }
+    },
+    "dpsCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 3,
+      "metadata": {
+        "description": "The Azure Device Provisioning service capacity."
+      }
+    },
+    "dpsLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location of Azure IoT Hub for Device Provisioning service."
+      }
+    },
+    "datalakeSku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "The datalake SKU to use."
+      }
+    },
+    "eventHubSkuTier": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Basic"
+      ],
+      "metadata": {
+        "description": "The tier plan of the event hub namespace."
+      }
+    },
+    "eventHubSkuCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 0,
+      "maxValue": 20,
+      "metadata": {
+        "description": "The event hubs throughput units."
+      }
+    },
+    "eventHubAutoInflate": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Value that indicates whether AutoInflate is enabled for eventhub namespace."
+      }
+    },
+    "eventHubMaxThroughput": {
+      "type": "int",
+      "defaultValue": 0,
+      "minValue": 0,
+      "maxValue": 20,
+      "metadata": {
+        "description": "Upper limit of throughput units when AutoInflate is enabled."
+      }
+    },
+    "eventHubRetentionInDays": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 7,
+      "metadata": {
+        "description": "Number of days to retain the events for this Event Hub."
+      }
+    },
+    "eventHubPartitionCount": {
+      "type": "int",
+      "defaultValue": 4,
+      "minValue": 1,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of partitions created for the Event Hub."
+      }
+    },
+    "deployTsiEnvironment": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create a Time Series Insights Environment"
+      }
+    },
+    "tsiEnvironmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the Time Series Insights environment"
+      }
+    },
+    "tsiEnvironmentSku": {
+      "type": "string",
+      "defaultValue": "L1",
+      "allowedValues": [
+        "L1"
+      ],
+      "metadata": {
+        "description": "The name of the sku. For more information, see https://azure.microsoft.com/pricing/details/time-series-insights/"
+      }
+    },
+    "tsiEnvironmentKind": {
+      "type": "string",
+      "defaultValue": "LongTerm",
+      "allowedValues": [
+        "LongTerm"
+      ],
+      "metadata": {
+        "description": "The Time Series Environment kind."
+      }
+    },
+    "tsiEnvironmentSkuCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 10,
+      "metadata": {
+        "description": "The unit capacity of the Sku. For more information, see https://azure.microsoft.com/pricing/details/time-series-insights/"
+      }
+    },
+    "tsiEnvironmentTimeSeriesIdProperties": {
+      "type": "array",
+      "maxLength": 3,
+      "metadata": {
+        "description": "Time Series ID acts as a partition key for your data and as a primary key for your time series model. It is important that you specify the appropriate Time Series Property ID during environment creation, since you can't change it later. Note that the Property ID is case sensitive. You can use 1-3 keys: one is required, but up to three can be used to create a composite."
+      }
+    },
+    "tsiTimestampPropertyName": {
+      "type": "string",
+      "defaultValue": "",
+      "maxLength": 90,
+      "metadata": {
+        "description": "The event property that will be used as the event source's timestamp. If a value isn't specified for timestampPropertyName, or if null or empty-string is specified, the event creation time will be used."
+      }
+    },
+    "tsiAccessPolicyObjectId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object id of the user or application in AAD that should have Contributor access to the environment. The service principal objectId can be obtained by calling the Get-AzureRMADUser or the Get-AzureRMADServicePrincipal cmdlets. Creating an access policy for AAD groups is not yet supported."
+      }
+    },
+    "tsiAccessPolicyRoles": {
+      "type": "array",
+      "defaultValue": [ "Contributor" ],
+      "metadata": {
+        "description": "A list of the access roles assigned to the object Id specified in the parameter tsiAccessPolicyObjectId"
+      }
+    },
+    "tsiStorageAccountKind": {
+      "type": "string",
+      "defaultValue": "StorageV2",
+      "allowedValues": [
+        "BlobStorage",
+        "BlockBlobStorage",
+        "FileStorage",
+        "Storage",
+        "StorageV2"
+      ],
+      "metadata": {
+        "description": "Storage account kind for warm up storage"
+      }
+    },
+    "tsiStorageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type for L1 TSI environments."
+      }
+    },
+    "tsiStorageisHnsEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether the storage account for warm up storage has HNS enabled"
+      }
+    },
+    "tsiWarmStoreDataRetention": {
+      "type": "string",
+      "defaultValue": "P7D",
+      "metadata": {
+        "description": "ISO duration between 7 and 31 days. Remove the 'warmStoreConfiguration' property from the envrionment to delete the warm store."
+      }
+    },
+    "adxClusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Data Factory cluster name."
+      }
+    },
+    "adxClusterSku": {
+      "type": "string",
+      "defaultValue": "Dev(No SLA)_Standard_E2a_v4",
+      "metadata": {
+        "description": "Azure Data Factory cluster Sku."
+      }
+    },
+    "adxClusterTier": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "metadata": {
+        "description": "Azure Data Factory cluster tier."
+      }
+    },
+    "adxClusterCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 6,
+      "metadata": {
+        "description": "Azure Data Factory cluster capacity."
+      }
+    },
+    "adxDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Data Factory database name."
+      }
+    },
+    "adxAccessPolicyPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Principal id to grant access rights to the Azure Data Explorer cluster. For users, the value should be in the form of 'user@contoso.com'."
+      }
+    },
+    "adxAccessPolicyPrincipalType": {
+      "type": "string",
+      "defaultValue": "User",
+      "metadata": {
+        "description": "Principal type to grant access rights to the Azure Data Explorer cluster."
+      }
+    },
+    "adxAccessPolicyRole": {
+      "type": "string",
+      "defaultValue": "Admin",
+      "metadata": {
+        "description": "Access level granted to the user for the Azure Data Explorer cluster."
+      }
+    },
+    "adxAccessPrincipalAssignmentId": {
+      "type": "string",
+      "defaultValue": "[newGuid()]",
+      "metadata": {
+        "description": "Unique Id to assign to the Azure Data Explorer cluster acess."
+      }
+    },
+    "edgeASAJobName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the edge stream analytics job."
+      }
+    },
+    "edgeASAJobQuery": {
+      "type": "string",
+      "metadata": {
+        "description": "Transformation query for edge stream analytics job"
+      }
+    },
+    "edgeASAJobInputName": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job input name"
+      }
+    },
+    "edgeASAJobOutput1Name": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job output 1 name"
+      }
+    },
+    "edgeASAJobOutput2Name": {
+      "type": "string",
+      "metadata": {
+        "description": "edge stream analytics job output 2 name"
+      }
+    },
+    "cloudASAJobQuery": {
+      "type": "string",
+      "metadata": {
+        "description": "Transformation query for the cloud stream analytics job"
+      }
+    },
+    "cloudASAJobStreamingUnits": {
+      "type": "int",
+      "minValue": 1,
+      "maxValue": 192,
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Streaming Units"
+      },
+      "allowedValues": [
+        1,
+        3,
+        6,
+        12,
+        18,
+        24,
+        30,
+        36,
+        42,
+        48,
+        54,
+        60,
+        66,
+        72,
+        78,
+        84,
+        90,
+        96,
+        102,
+        108,
+        114,
+        120,
+        126,
+        132,
+        138,
+        144,
+        150,
+        156,
+        162,
+        168,
+        174,
+        180,
+        186,
+        192
+      ]
+    },
+    "notificationsWebhookUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Webhook URL to receive notifications from the notifications event grid."
+      }
+    },
+    "alertsWebhookUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Webhook URL to receive alerts from the notifications event grid."
+      }
+    },
+    "templateUrl": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/marvin-garcia/IoTGateway",
+      "metadata": {
+        "description": "Template URL for the custom scripts."
+      }
+    },
+    "branchName": {
+      "type": "string",
+      "defaultValue": "master",
+      "metadata": {
+        "description": "Repository branch name for the custom scripts."
+      }
+    },
+    "imagesNamespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Namespace for Microsoft Docker images."
+      }
+    },
+    "imagesTag": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Namespace for Microsoft Docker images."
+      }
+    },
+    "dockerServer": {
+      "type": "string",
+      "defaultValue": "mcr.microsoft.com",
+      "metadata": {
+        "description": "Docker Server Uri to pull Docker images from."
+      }
+    },
+    "dockerUser": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Username to authenticate with Docker server."
+      }
+    },
+    "dockerPassword": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Password to authenticate with Docker server."
+      }
+    }
+  },
+  "variables": {
+    "simVmDnsName": "[concat(parameters('simVmName'), '-', parameters('environmentHashId'))]",
+    "edgeVmDnsName": "[concat(parameters('edgeVmName'), '-', parameters('environmentHashId'))]",
+    "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
+    "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
+    "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
+    "datalakeName": "[concat('telemetrystorage', parameters('environmentHashId'))]",
+    "datalakeContainerName": "telemetry",
+    "eventHubNamespaceName": "[concat('eh-', parameters('environmentHashId'))]",
+    "tsiStorageAccountName": "[concat('tsistorage', parameters('environmentHashId'))]",
+    "simPublicIPAddressName": "[concat(parameters('simVmName'), '-ip')]",
+    "simNetworkInterfaceName": "[concat(parameters('simVmName'), '-nic')]",
+    "simNetworkSecurityGroupName": "[concat(parameters('simVmName'), '-nsg')]",
+    "edgePublicIPAddressName": "[concat(parameters('edgeVmName'), '-ip')]",
+    "edgeNetworkInterfaceName": "[concat(parameters('edgeVmName'), '-nic')]",
+    "edgeNetworkSecurityGroupName": "[concat(parameters('edgeVmName'), '-nsg')]",
+    "industrialIoTTemplateUrl": "https://raw.githubusercontent.com/Azure/Industrial-IoT",
+    "industrialIoTBranchName": "master",
+    "industrialIoTSimulationProfile": "default",
+    "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+    "iotHubEventsRoute": "events",
+    "iotHubStorageEndpointName": "persistentstorage",
+    "iotHubOwnerPolicyName": "iothubowner",
+    "iotHubServicePolicyName": "serviceconnect",
+    "asaConsumerGroupName": "streamanalytics",
+    "eventHubListenPolicyName": "listen",
+    "eventHubListenRuleId": "[resourceId('Microsoft.EventHub/namespaces/AuthorizationRules', variables('eventHubNamespaceName'), variables('eventHubListenPolicyName'))]",
+    "eventHubSendPolicyName": "send",
+    "eventHubSendRuleId": "[resourceId('Microsoft.EventHub/namespaces/AuthorizationRules', variables('eventHubNamespaceName'), variables('eventHubSendPolicyName'))]",
+    "eventHubTelemetryName": "telemetry",
+    "eventHubNotificationsName": "notifications",
+    "eventHubAlertsName": "alerts",
+    "tsiConsumerGroupName": "timeseriesinsights",
+    "logicAppConsumerGroupName": "logicapp",
+    "tsiTelemetrySourceName": "telemetryhub",
+    "tsiAlertsSourceName": "alertshub",
+    "adxConsumerGroupName": "dataexplorer",
+    "eventGridNotificationsTopicName": "[concat('eg-notifications-', parameters('environmentHashId'))]",
+    "eventGridNotificationsSubscriptionName": "notifications",
+    "eventGridNotificationsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridNotificationsTopicName'))]",
+    "eventGridAlertsTopicName": "[concat('eg-alerts-', parameters('environmentHashId'))]",
+    "eventGridAlertsSubscriptionName": "alerts",
+    "eventGridAlertsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName'))]",
+    "notificationsLogicAppName": "NotificationsApp",
+    "alertsLogicAppName": "AlertsApp",
+    "edgeASAStorageAccountName": "[concat('asaedgestrg', parameters('environmentHashId'))]",
+    "edgeASAStorageContainerName": "asaedge",
+    "cloudASAJobName": "[concat('asa-cloud-', parameters('environmentHashId'))]"
+  },
+  "resources": [
+    {
+      "comments": "OPC Sim VM network security group",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('simNetworkSecurityGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "ssh_rule",
+            "properties": {
+              "description": "Locks inbound down to ssh default port 22.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "opcserver0",
+            "properties": {
+              "description": "Connection to OPC server #0.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "51200",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "opcserver1",
+            "properties": {
+              "description": "Connection to OPC server #1.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "51201",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 300,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "opcserver2",
+            "properties": {
+              "description": "Connection to OPC server #2.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "51202",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 400,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "OPC Sim VM public IP address",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('simPublicIPAddressName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('simVmDnsName')]"
+        }
+      },
+      "sku": {
+        "name": "Basic"
+      }
+    },
+    {
+      "comments": "IoT virtual network",
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-05-01",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('edgeNetworkSecurityGroupName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vNetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('simSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('simSubnetAddressRange')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]"
+              }
+            }
+          },
+          {
+            "name": "[parameters('edgeSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('edgeSubnetAddressRange')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('edgeNetworkSecurityGroupName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "OPC Sim network interface",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('simNetworkInterfaceName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('simPublicIPAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('simNetworkSecurityGroupName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('simPublicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('simSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "OPC Sim virtual machine",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-12-01",
+      "name": "[parameters('simVmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('simNetworkInterfaceName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('simVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('simVmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "18.04-LTS",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "fromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('simNetworkInterfaceName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "comments": "One time script execution to configure OPC Sim",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('simVmName'), '/', 'scriptextensions')]",
+      "apiVersion": "2019-03-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+          "publisher": "Microsoft.Azure.Extensions",
+          "type": "CustomScript",
+          "typeHandlerVersion": "2.0",
+          "autoUpgradeMinorVersion": true,
+          "settings": {
+              "fileUris": [
+                  "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/simulation.sh')]",
+                  "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/', variables('industrialIoTSimulationProfile'), '.yml')]"
+              ]
+          },
+          "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash simulation.sh ', ' --admin ', parameters('adminUsername'), ' --name ', variables('industrialIoTSimulationProfile'), ' --imagesNamespace ', concat('\"', parameters('imagesNamespace'), '\"'), ' --imagesTag ', concat('\"', parameters('imagesTag'), '\"'), ' --dockerServer ', concat('\"', parameters('dockerServer'), '\"'), ' --dockerUser ', concat('\"', parameters('dockerUser'), '\"'), ' --dockerPassword ', concat('\"', parameters('dockerPassword'), '\"'))]"
+          }
+      },
+      "dependsOn": [
+          "[resourceId('Microsoft.Compute/virtualMachines/', concat(parameters('simVmName')))]"
+      ]
+    },
+    {
+      "comments": "IoT edge VM network security group",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('edgeNetworkSecurityGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "ssh_rule",
+            "properties": {
+              "description": "Locks inbound down to ssh default port 22.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "IoT edge VM public IP address",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('edgePublicIPAddressName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('edgeVmDnsName')]"
+        }
+      },
+      "sku": {
+        "name": "Basic"
+      }
+    },
+    {
+      "comments": "IoT edge VM network interface",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('edgeNetworkInterfaceName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('edgePublicIPAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('edgeNetworkSecurityGroupName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('edgePublicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('edgeSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "IoT edge virtual machine",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-12-01",
+      "name": "[parameters('edgeVmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('edgeNetworkInterfaceName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('edgeVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('edgeVmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "microsoft_iot_edge",
+            "offer": "iot_edge_vm_ubuntu",
+            "sku": "ubuntu_1604_edgeruntimeonly",
+            "version": "1.0.1"
+          },
+          "osDisk": {
+            "createOption": "fromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('edgeNetworkInterfaceName'))]"
+            }
+          ]
+        }
+      },
+      "plan": {
+        "name": "ubuntu_1604_edgeruntimeonly",
+        "publisher": "microsoft_iot_edge",
+        "product": "iot_edge_vm_ubuntu"
+      }
+    },
+    {
+      "comments": "One time script to configure and onboard the IoT edge virtual machine",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('edgeVmName'), '/', 'scriptextensions')]",
+      "apiVersion": "2019-03-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/dps-enroll.ps1')]",
+            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.ps1')]",
+            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.sh')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('edgeVmName'))]",
+        "[variables('dpsResourceId')]"
+      ]
+    },
+    {
+      "comments": "One time deployment to set OPC publish nodes Json file in IoT edge VM.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "publishednodes",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "edgeVmName": {
+            "value": "[parameters('edgeVmName')]"
+          },
+          "opcServerFqdn": {
+            "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('simNetworkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+          },
+          "opcPorts": {
+            "value": "51200,51201,51202"
+          },
+          "publishedNodesPath": {
+            "value": "[parameters('edgeVmPublishedNodesPath')]"
+          },
+          "templateUrl": {
+            "value":"[parameters('templateUrl')]"
+          },
+          "branchName": {
+            "value": "[parameters('branchName')]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Templates/publishNodes.json')]"
+        }
+      },
+      "dependsOn": [
+        "[concat(resourceId('Microsoft.Compute/virtualMachines', parameters('edgeVmName')), '/extensions/scriptextensions')]"
+      ]
+    },
+    {
+      "comments": "Datalake storage account",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('datalakeName')]",
+      "apiVersion": "2019-04-01",
+      "location": "[resourceGroup().location]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "[parameters('datalakeSku')]"
+      },
+      "properties": {
+        "isHnsEnabled": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [
+          ],
+          "ipRules": [
+          ],
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "services": {
+            "file": {
+              "enabled": true
+            },
+            "blob": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        }
+      },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2019-06-01",
+          "name": "[concat('default/', variables('datalakeContainerName'))]",
+          "dependsOn": [
+            "[variables('datalakeName')]"
+          ]
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "comments": "Azure IoT Hub",
+      "apiVersion": "2020-03-01",
+      "type": "Microsoft.Devices/Iothubs",
+      "name": "[variables('iotHubName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('iotHubSku')]",
+        "tier": "[parameters('iotHubTier')]",
+        "capacity": "[parameters('iotHubCapacity')]"
+      },
+      "dependsOn": [
+        "[variables('datalakeName')]"
+      ],
+      "properties": {
+        "location": "[resourceGroup().location]",
+        "authorizationPolicies": [
+          {
+            "keyName": "[variables('iotHubOwnerPolicyName')]",
+            "rights": "RegistryWrite,ServiceConnect,DeviceConnect"
+          },
+          {
+            "keyName": "[variables('iotHubServicePolicyName')]",
+            "rights": "ServiceConnect"
+          }
+        ],
+        "ipFilterRules": [],
+        "eventHubEndpoints": {
+          "events": {
+            "retentionTimeInDays": "[parameters('iotHubRetentionInDays')]",
+            "partitionCount": "[parameters('iotHubPartitionCount')]"
+          }
+        },
+        "routing": {
+          "endpoints": {
+            "serviceBusQueues": [],
+            "serviceBusTopics": [],
+            "eventHubs": [],
+            "storageContainers": [
+              {
+                "name": "[variables('iotHubStorageEndpointName')]",
+                "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                "subscriptionId": "[subscription().subscriptionId]",
+                "resourceGroup": "[resourceGroup().name]",
+                "containerName": "[variables('datalakeContainerName')]",
+                "fileNameFormat": "{iothub}/{partition}/{YYYY}/{MM}/{DD}/{HH}/{mm}",
+                "batchFrequencyInSeconds": 100,
+                "maxChunkSizeInBytes": 10485760,
+                "encoding": "Json"
+              }
+            ]
+          },
+          "routes": [
+            {
+              "name": "[variables('iotHubStorageEndpointName')]",
+              "source": "DeviceMessages",
+              "condition": "true",
+              "endpointNames": [
+                "[variables('iotHubStorageEndpointName')]"
+              ],
+              "isEnabled": true
+            },
+            {
+                "name": "[variables('iotHubEventsRoute')]",
+                "source": "DeviceMessages",
+                "condition": "true",
+                "endpointNames": [
+                    "events"
+                ],
+                "isEnabled": true
+            }
+          ],
+          "fallbackRoute": {
+            "name": "$fallback",
+            "source": "DeviceMessages",
+            "condition": "true",
+            "endpointNames": [
+              "events"
+            ],
+            "isEnabled": true
+          }
+        },
+        "storageEndpoints": {
+          "$default": {
+            "sasTtlAsIso8601": "PT1H",
+            "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+            "containerName": "[variables('datalakeContainerName')]"
+          }
+        },
+        "messagingEndpoints": {
+          "fileNotifications": {
+            "lockDurationAsIso8601": "PT1M",
+            "ttlAsIso8601": "PT1H",
+            "maxDeliveryCount": 10
+          }
+        },
+        "enableFileUploadNotifications": true,
+        "cloudToDevice": {
+          "maxDeliveryCount": 10,
+          "defaultTtlAsIso8601": "PT1H",
+          "feedback": {
+            "lockDurationAsIso8601": "PT1M",
+            "ttlAsIso8601": "PT1H",
+            "maxDeliveryCount": 10
+          }
+        },
+        "features": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Devices/iotHubs/eventhubEndpoints/ConsumerGroups",
+      "apiVersion": "2020-03-01",
+      "name": "[concat(variables('iotHubName'), '/events/', variables('asaConsumerGroupName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Devices/IotHubs', variables('iotHubName'))]"
+      ]
+    },
+    {
+      "comments": "Azure Device Provisioning service.",
+      "type": "Microsoft.Devices/provisioningServices",
+      "name": "[variables('dpsName')]",
+      "apiVersion": "2018-01-22",
+      "location": "[resourceGroup().location]",
+      "sku": {
+          "name": "[parameters('dpsSku')]",
+          "capacity": "[parameters('dpsCapacity')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]"
+      ],
+      "properties": {
+        "iotHubs": [
+          {
+            "connectionString": "[concat('HostName=', reference(resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))).hostName, ';SharedAccessKeyName=iothubowner', ';SharedAccessKey=', listKeys(resourceId('Microsoft.Devices/IotHubs', variables('iotHubName')), providers('Microsoft.Devices', 'IoTHubs').apiVersions[0]).value[0].primaryKey)]",
+            "location": "[parameters('dpsLocation')]",
+            "name": "[concat(variables('iotHubName'),'.azure-devices.net')]"
+          }
+        ]
+      }
+    },
+    {
+      "comments": "Azure Event Hub Namespace",
+      "type": "Microsoft.EventHub/namespaces",
+      "apiVersion": "2017-04-01",
+      "name": "[variables('eventHubNamespaceName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [],
+      "sku": {
+          "name": "[parameters('eventHubSkuTier')]",
+          "tier": "[parameters('eventHubSkuTier')]",
+          "capacity": "[parameters('eventHubSkuCapacity')]"
+      },
+      "properties": {
+          "isAutoInflateEnabled": "[parameters('eventHubAutoInflate')]",
+          "maximumThroughputUnits": "[parameters('eventHubMaxThroughput')]"
+      }
+    },
+    {
+      "comments": "Azure Event hub authorization rule to listen to events",
+      "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubListenPolicyName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Listen"
+        ]
+      }
+    },
+    {
+      "comments": "Azure Event hub authorization rule to send events",
+      "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubSendPolicyName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Send"
+        ]
+      }
+    },
+    {
+      "comments": "Azure Event Hub for processed Device Telemetry",
+      "type": "Microsoft.EventHub/namespaces/eventhubs",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubTelemetryName'))]",
+      "apiVersion": "2017-04-01",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "messageRetentionInDays": "[parameters('eventHubRetentionInDays')]",
+        "partitionCount": "[parameters('eventHubPartitionCount')]",
+        "status": "Active"
+      }
+    },
+    {
+      "comments": "Consumer group for telemetry data for Azure Data Explorer",
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubTelemetryName'), '/', variables('adxConsumerGroupName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "comments": "Consumer group for telemetry data for Time Series Insights",
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubTelemetryName'), '/', variables('tsiConsumerGroupName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "comments": "Azure Event Hub for processed notifications",
+      "type": "Microsoft.EventHub/namespaces/eventhubs",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubNotificationsName'))]",
+      "apiVersion": "2017-04-01",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "messageRetentionInDays": "[parameters('eventHubRetentionInDays')]",
+        "partitionCount": "[parameters('eventHubPartitionCount')]",
+        "status": "Active"
+      }
+    },
+    {
+      "comments": "Consumer group for notifications logic app",
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubNotificationsName'), '/', variables('logicAppConsumerGroupName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubNotificationsName'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "comments": "Azure Event Hub for processed alerts",
+      "type": "Microsoft.EventHub/namespaces/eventhubs",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubAlertsName'))]",
+      "apiVersion": "2017-04-01",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "messageRetentionInDays": "[parameters('eventHubRetentionInDays')]",
+        "partitionCount": "[parameters('eventHubPartitionCount')]",
+        "status": "Active"
+      }
+    },
+    {
+      "comments": "Consumer group for alerting logic app",
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubAlertsName'), '/', variables('logicAppConsumerGroupName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubAlertsName'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "comments": "Consumer group for Time Series Insights",
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('eventHubNamespaceName'), '/', variables('eventHubAlertsName'), '/', variables('tsiConsumerGroupName'))]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubAlertsName'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "comments": "Time Series Insights storage account",
+      "condition": "[parameters('deployTsiEnvironment')]",
+      "apiVersion": "2018-02-01",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('tsiStorageAccountName')]",
+      "kind": "[parameters('tsiStorageAccountKind')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('tsiStorageAccountType')]"
+      },
+      "properties": {
+        "isHnsEnabled": "[parameters('tsiStorageisHnsEnabled')]"
+      }
+    },
+    {
+      "comments": "Time Series Insights environment",
+      "condition": "[parameters('deployTsiEnvironment')]",
+      "apiVersion": "2020-05-15",
+      "type": "Microsoft.TimeSeriesInsights/environments",
+      "name": "[parameters('tsiEnvironmentName')]",
+      "kind": "[parameters('tsiEnvironmentKind')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('tsiEnvironmentSku')]",
+        "capacity": "[parameters('tsiEnvironmentSkuCapacity')]"
+      },
+      "properties": {
+        "storageConfiguration": {
+          "accountName": "[variables('tsiStorageAccountName')]",
+          "managementKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('tsiStorageAccountName')), '2018-02-01').keys[0].value]"
+        },
+        "timeSeriesIdProperties": "[parameters('tsiEnvironmentTimeSeriesIdProperties')]",
+        "warmStoreConfiguration": {
+          "dataRetention": "[parameters('tsiWarmStoreDataRetention')]"
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2020-05-15",
+          "type": "Microsoft.TimeSeriesInsights/environments/accesspolicies",
+          "name": "[concat(parameters('tsiEnvironmentName'), '/', 'ownerAccessPolicyName')]",
+          "condition": "[not(empty(parameters('tsiAccessPolicyObjectId')))]",
+          "properties": {
+            "principalObjectId": "[parameters('tsiAccessPolicyObjectId')]",
+            "roles": "[parameters('tsiAccessPolicyRoles')]"
+          },
+          "dependsOn": [
+            "[concat('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
+          ]
+        },
+        {
+          "apiVersion": "2020-05-15",
+          "type": "eventsources",
+          "kind": "Microsoft.EventHub",
+          "name": "[variables('tsiTelemetrySourceName')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
+          ],
+          "properties": {
+            "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]",
+            "serviceBusNamespace": "[variables('eventHubNamespaceName')]",
+            "eventHubName": "[variables('eventHubTelemetryName')]",
+            "keyName": "[variables('eventHubListenPolicyName')]",
+            "consumerGroupName": "[variables('tsiConsumerGroupName')]",
+            "sharedAccessKey": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]",
+            "timestampPropertyName": "[parameters('tsiTimestampPropertyName')]"
+          }
+        },
+        {
+          "apiVersion": "2020-05-15",
+          "type": "eventsources",
+          "kind": "Microsoft.EventHub",
+          "name": "[variables('tsiAlertsSourceName')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
+          ],
+          "properties": {
+            "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubAlertsName'))]",
+            "serviceBusNamespace": "[variables('eventHubNamespaceName')]",
+            "eventHubName": "[variables('eventHubAlertsName')]",
+            "keyName": "[variables('eventHubListenPolicyName')]",
+            "consumerGroupName": "[variables('tsiConsumerGroupName')]",
+            "sharedAccessKey": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]",
+            "timestampPropertyName": "[parameters('tsiTimestampPropertyName')]"
+          }
+        }
+      ],
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', variables('tsiStorageAccountName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
+      ]
+    },
+    {
+      "comments": "Deploy Azure Data Explorer cluster",
+      "type": "Microsoft.Kusto/Clusters",
+      "apiVersion": "2020-06-14",
+      "name": "[parameters('adxClusterName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('adxClusterSku')]",
+        "tier": "[parameters('adxClusterTier')]",
+        "capacity": "[parameters('adxClusterCapacity')]"
+      },
+      "properties": {
+        "trustedExternalTenants": [],
+        "enableDiskEncryption": false,
+        "enableStreamingIngest": true,
+        "enablePurge": true,
+        "enableDoubleEncryption": false
+      }
+    },
+    {
+      "comments": "Deploy Azure Data Explorer database",
+      "type": "Microsoft.Kusto/Clusters/Databases",
+      "apiVersion": "2020-06-14",
+      "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]"
+      ],
+      "kind": "ReadWrite",
+      "properties": {
+        "softDeletePeriod": "P3650D",
+        "hotCachePeriod": "P31D"
+      }
+    },
+    // {
+    //   "comments": "Set up Azure Data Explorer database connection",
+    //   "type": "Microsoft.Kusto/Clusters/Databases/DataConnections",
+    //   "apiVersion": "2020-06-14",
+    //   "name": "[variables('adxDatabaseConnectionName')]",
+    //   "location": "[parameters('location')]",
+    //   "dependsOn": [
+    //     "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
+    //     "[resourceId('Microsoft.Kusto/Clusters/Databases', concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName')))]"
+    //   ],
+    //   "kind": "EventHub",
+    //   "properties": {
+    //     "eventHubResourceId": "[concat(variables('eventHubNamespaceName'), '/eventhubs/', variables('eventHubTelemetryName'))]",
+    //     "consumerGroup": "[variables('adxConsumerGroupName')]",
+    //     "tableName": "[variables('adxDatabaseTableName')]",
+    //     "mappingRuleName": "TelemetryMapping",
+    //     "dataFormat": "JSON",
+    //     "eventSystemProperties": [],
+    //     "compression": "None",
+    //     "provisioningState": "Succeeded"
+    //   }
+    // },
+    {
+      "type": "Microsoft.Kusto/Clusters/Databases/PrincipalAssignments",
+      "apiVersion": "2020-06-14",
+      "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'), '/', parameters('adxAccessPrincipalAssignmentId'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
+        "[resourceId('Microsoft.Kusto/Clusters/Databases', parameters('adxClusterName'), parameters('adxDatabaseName'))]"
+      ],
+      "properties": {
+        "principalId": "[parameters('adxAccessPolicyPrincipalId')]",
+        "role": "[parameters('adxAccessPolicyRole')]",
+        "principalType": "[parameters('adxAccessPolicyPrincipalType')]",
+        "tenantId": "[subscription().tenantId]"
+      }
+    },
+    {
+      "comments": "Notifications event grid topic",
+      "apiVersion": "2020-06-01",
+      "type": "Microsoft.EventGrid/topics",
+      "name": "[variables('eventGridNotificationsTopicName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "inputSchema": "EventGridSchema",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "comments": "Notifications event grid subscription",
+      "apiVersion": "2020-06-01",
+      "type": "Microsoft.EventGrid/topics/providers/eventSubscriptions",
+      "name": "[concat(variables('eventGridNotificationsTopicName'), '/Microsoft.EventGrid/', variables('eventGridNotificationsSubscriptionName'))]",
+      "properties": {
+        "destination": {
+          "endpointType": "WebHook",
+          "properties": {
+            "endpointUrl": "[parameters('notificationsWebhookUrl')]"
+          }
+        },
+        "eventDeliverySchema": "EventGridSchema",
+        "retryPolicy": {
+          "maxDeliveryAttempts": 30,
+          "eventTimeToLiveInMinutes": 1440
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.EventGrid/topics', variables('eventGridNotificationsTopicName'))]"
+      ]
+    },
+    {
+      "comments": "Alerting event grid topic",
+      "apiVersion": "2020-06-01",
+      "type": "Microsoft.EventGrid/topics",
+      "name": "[variables('eventGridAlertsTopicName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "inputSchema": "EventGridSchema",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "comments": "Alerting event grid subscription",
+      "apiVersion": "2020-06-01",
+      "type": "Microsoft.EventGrid/topics/providers/eventSubscriptions",
+      "name": "[concat(variables('eventGridAlertsTopicName'), '/Microsoft.EventGrid/', variables('eventGridAlertsSubscriptionName'))]",
+      "properties": {
+        "destination": {
+          "endpointType": "WebHook",
+          "properties": {
+            "endpointUrl": "[parameters('alertsWebhookUrl')]",
+            "maxEventsPerBatch": 1,
+            "preferredBatchSizeInKilobytes": 64
+          }
+        },
+        "eventDeliverySchema": "EventGridSchema",
+        "retryPolicy": {
+          "maxDeliveryAttempts": 30,
+          "eventTimeToLiveInMinutes": 1440
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName'))]"
+      ]
+    },
+    {
+      "comments": "Deploy notifications logic app.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('notificationsLogicAppName')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "logicAppName": {
+            "value": "[variables('notificationsLogicAppName')]"
+          },
+          "eventhubs_1_Consumer_Group": {
+            "value": "[variables('logicAppConsumerGroupName')]"
+          },
+          "eventhubs_1_connectionString": {
+            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryConnectionString]"
+          },
+          "azureeventgridpublish_1_endpoint": {
+            "value": "[reference(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+          },
+          "azureeventgridpublish_1_api_key": {
+            "value": "[listKeys(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).key1]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/LogicApps/NotificationsApp/LogicApp.json')]"
+        }
+      },
+      "dependsOn": [
+        "[concat(resourceId('Microsoft.EventGrid/topics', variables('eventGridNotificationsTopicName')), '/providers/Microsoft.EventGrid/eventSubscriptions/', variables('eventGridNotificationsSubscriptionName'))]"
+      ]
+    },
+    {
+      "comments": "Deploy alerts logic app.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('alertsLogicAppName')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "logicAppName": {
+            "value": "[variables('alertsLogicAppName')]"
+          },
+          "eventhubs_1_Consumer_Group": {
+            "value": "[variables('logicAppConsumerGroupName')]"
+          },
+          "eventhubs_1_connectionString": {
+            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryConnectionString]"
+          },
+          "azureeventgridpublish_1_endpoint": {
+            "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+          },
+          "azureeventgridpublish_1_api_key": {
+            "value": "[listKeys(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).key1]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/LogicApps/AlertsApp/LogicApp.json')]"
+        }
+      },
+      "dependsOn": [
+        "[concat(resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName')), '/providers/Microsoft.EventGrid/eventSubscriptions/', variables('eventGridAlertsSubscriptionName'))]"
+      ]
+    },
+    {
+      "comments": "Deploy edge stream analytics job.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "[parameters('edgeASAJobName')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "StreamAnalyticsJobName": {
+            "value": "[parameters('edgeASAJobName')]"
+          },
+          "EventsLateArrivalMaxDelayInSeconds": {
+            "value": 5
+          },
+          "EventsOutOfOrderMaxDelayInSeconds": {
+            "value": 0
+          },
+          "query": {
+            "value": "[parameters('edgeASAJobQuery')]"
+          },
+          "Input_streaminput_Name": {
+            "value": "[parameters('edgeASAJobInputName')]"
+          },
+          "Output_1_Name": {
+            "value": "[parameters('edgeASAJobOutput1Name')]"
+          },
+          "Output_1_Format": {
+            "value": "Array"
+          },
+          "Output_2_Name": {
+            "value": "[parameters('edgeASAJobOutput2Name')]"
+          },
+          "Output_2_Format": {
+            "value": "Array"
+          },
+          "StorageAccountName": {
+            "value": "[variables('edgeASAStorageAccountName')]"
+          },
+          "storageContainerName": {
+            "value": "[variables('edgeASAStorageContainerName')]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/StreamAnalytics/EdgeASA/Deploy/EdgeASA.JobTemplate.json')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "comments": "Deploy cloud stream analytics job.",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('cloudASAJobName')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "StreamAnalyticsJobName": {
+            "value": "[variables('cloudASAJobName')]"
+          },
+          "query": {
+            "value": "[parameters('cloudASAJobQuery')]"
+          },
+          "EventsLateArrivalMaxDelayInSeconds": {
+            "value": 5
+          },
+          "EventsOutOfOrderMaxDelayInSeconds": {
+            "value": 0
+          },
+          "StreamingUnits": {
+            "value": "[parameters('cloudASAJobStreamingUnits')]"
+          },
+          "Input_iothub_iotHubNamespace": {
+            "value": "[variables('iotHubName')]"
+          },
+          "Input_iothub_consumerGroupName": {
+            "value": "[variables('asaConsumerGroupName')]"
+          },
+          "Input_iothub_endpoint": {
+            "value": "messages/events"
+          },
+          "Input_iothub_sharedAccessPolicyName": {
+            "value": "[variables('iotHubServicePolicyName')]"
+          },
+          "Input_iothub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('iotHubResourceId'), providers('Microsoft.Devices', 'Iothubs').apiVersions[0]).value[1].primaryKey]"
+          },
+          "Output_notificationshub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_notificationshub_eventHubName": {
+            "value": "[variables('eventHubNotificationsName')]"
+          },
+          "Output_notificationshub_partitionKey": {
+            "value": ""
+          },
+          "Output_notificationshub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_notificationshub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          },
+          "Output_alertshub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_alertshub_eventHubName": {
+            "value": "[variables('eventHubAlertsName')]"
+          },
+          "Output_alertshub_partitionKey": {
+            "value": ""
+          },
+          "Output_alertshub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_alertshub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          },
+          "Output_telemetryhub_serviceBusNamespace": {
+            "value": "[variables('eventHubNamespaceName')]"
+          },
+          "Output_telemetryhub_eventHubName": {
+            "value": "[variables('eventHubTelemetryName')]"
+          },
+          "Output_telemetryhub_partitionKey": {
+            "value": ""
+          },
+          "Output_telemetryhub_sharedAccessPolicyName": {
+            "value": "[variables('eventHubSendPolicyName')]"
+          },
+          "Output_telemetryhub_sharedAccessPolicyKey": {
+            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+          }
+        },
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/StreamAnalytics/CloudASA/Deploy/CloudASA.JobTemplate.json')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+        // "[concat('Microsoft.EventHub/namespaces/AuthorizationRules', '/', variables('eventHubNamespaceName'), '/', variables('eventHubSendPolicyName'))]"
+        "[concat(resourceId('Microsoft.EventHub/namespaces', variables('eventHubNamespaceName')), '/authorizationRules/', variables('eventHubSendPolicyName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "dpsIdScope": {
+      "type": "string",
+      "value": "[reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope]"
+    },
+    "dpsConnString": {
+      "type": "string",
+      "value": "[concat('HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey)]"
+    },
+    "eventHubSendKey": {
+      "type": "string",
+      "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+    },
+    "eventHubListenKey": {
+      "type": "string",
+      "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+    },
+    "eventGridNotificationsEndpoint": {
+      "type": "string",
+      "value": "[reference(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+    },
+    "eventGridAlertsEndpoint": {
+      "type": "string",
+      "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+    },
+    "tsiDataAccessFQDN": {
+      "value": "[reference(resourceId('Microsoft.TimeSeriesInsights/environments', parameters('tsiEnvironmentName'))).dataAccessFQDN]",
+      "type": "string"
+    }
+  }
+}

@@ -3,7 +3,12 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "ASAApiVersion": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "2017-04-01-preview",
+      "allowedValues": [
+        "2017-04-01-preview",
+        "2016-03-01"
+      ]
     },
     "StreamAnalyticsJobName": {
       "type": "string",
@@ -14,10 +19,12 @@
       }
     },
     "Location": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
     },
     "OutputStartMode": {
       "type": "string",
+      "defaultValue": "JobStartTime",
       "allowedValues": [
         "JobStartTime",
         "CustomTime",
@@ -25,13 +32,16 @@
       ]
     },
     "OutputStartTime": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "2019-01-01T00:00:00Z"
     },
     "DataLocale": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "en-US"
     },
     "OutputErrorPolicy": {
       "type": "string",
+      "defaultValue": "Stop",
       "allowedValues": [
         "Drop",
         "Stop"
@@ -45,6 +55,7 @@
     },
     "EventsOutOfOrderPolicy": {
       "type": "string",
+      "defaultValue": "Adjust",
       "allowedValues": [
         "Adjust",
         "Drop"
@@ -96,11 +107,15 @@
     },
     "CompatibilityLevel": {
       "type": "string",
+      "defaultValue": "1.2",
       "allowedValues": [
         "1.0",
         "1.1",
         "1.2"
       ]
+    },
+    "query": {
+      "type": "string"
     },
     "Input_iothub_iotHubNamespace": {
       "type": "string"
@@ -115,27 +130,6 @@
       "type": "string"
     },
     "Input_iothub_sharedAccessPolicyKey": {
-      "type": "string"
-    },
-    "Output_storageblob_Storage1_accountName": {
-      "type": "string"
-    },
-    "Output_storageblob_Storage1_accountKey": {
-      "type": "string"
-    },
-    "Output_storageblob_container": {
-      "type": "string"
-    },
-    "Output_storageblob_pathPattern": {
-      "type": "string"
-    },
-    "Output_storageblob_dateFormat": {
-      "type": "string"
-    },
-    "Output_storageblob_timeFormat": {
-      "type": "string"
-    },
-    "Output_storageblob_authenticationMode": {
       "type": "string"
     },
     "Output_notificationshub_serviceBusNamespace": {
@@ -207,7 +201,7 @@
           "name": "Transformation",
           "properties": {
             "streamingUnits": "[parameters('StreamingUnits')]",
-            "query": "SELECT\r\n    GetMetadataPropertyValue(iothub, 'EventId') AS id,\r\n    System.Timestamp() AS SourceTimestamp,\r\n    nodeid AS NodeId,\r\n    applicationuri AS ApplicationUri,\r\n    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId,\r\n    /* dipdata */\r\n    LAST(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipValue,\r\n    AVG(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipAvg,\r\n    MAX(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMax,\r\n    MIN(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipMin,\r\n    COUNT(DipData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN DipData is not NULL) AS DipCount,\r\n    /* spikedata */\r\n    LAST(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeValue,\r\n    AVG(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeAvg,\r\n    MAX(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMax,\r\n    MIN(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeMin,\r\n    COUNT(SpikeData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN SpikeData is not NULL) AS SpikeCount,\r\n    /* positive trend */\r\n    LAST(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendValue,\r\n    AVG(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendAvg,\r\n    MAX(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMax,\r\n    MIN(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendMin,\r\n    COUNT(PositiveTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN PositiveTrendData is not NULL) AS PositiveTrendCount,\r\n    /* negative trend */\r\n    LAST(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendValue,\r\n    AVG(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendAvg,\r\n    MAX(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMax,\r\n    MIN(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendMin,\r\n    COUNT(NegativeTrendData) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN NegativeTrendData is not NULL) AS NegativeTrendCount,\r\n    /* randome signed */\r\n    LAST(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedValue,\r\n    AVG(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedAvg,\r\n    MAX(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMax,\r\n    MIN(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedMin,\r\n    COUNT(RandomSignedInt32) OVER (PARTITION BY iothub.IoTHub.ConnectionDeviceId LIMIT DURATION(minute, 3) WHEN RandomSignedInt32 is not NULL) AS RandomSignedCount\r\nINTO storageblob\r\nFROM iothub\r\n\r\nSELECT\r\n    *,\r\n    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId\r\nINTO notificationshub\r\nFROM iothub\r\nWHERE AlternatingBoolean > 0\r\n\r\nSELECT\r\n    nodeid AS NodeId,\r\n    applicationuri AS ApplicationUri,\r\n    sourcetimestamp AS SourceTimestamp,\r\n    tag AS Tag,\r\n    value AS Value,\r\n    isalert AS IsAlert,\r\n    anomalyscore AS AnomalyScore,\r\n    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId\r\nINTO alertshub\r\nFROM iothub\r\n-- WHERE isalert > 0\r\n\r\nSELECT\r\n    *,\r\n    iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId\r\nINTO telemetryhub\r\nFROM iothub\r\nWHERE isalert IS NULL"
+            "query": "[parameters('query')]"
           }
         },
         "inputs": [
@@ -238,34 +232,6 @@
           }
         ],
         "outputs": [
-          {
-            "name": "storageblob",
-            "properties": {
-              "serialization": {
-                "type": "Json",
-                "properties": {
-                  "encoding": "UTF8",
-                  "format": "LineSeparated"
-                }
-              },
-              "datasource": {
-                "type": "Microsoft.Storage/Blob",
-                "properties": {
-                  "storageAccounts": [
-                    {
-                      "accountName": "[parameters('Output_storageblob_Storage1_accountName')]",
-                      "accountKey": "[parameters('Output_storageblob_Storage1_accountKey')]"
-                    }
-                  ],
-                  "container": "[parameters('Output_storageblob_container')]",
-                  "pathPattern": "[parameters('Output_storageblob_pathPattern')]",
-                  "dateFormat": "[parameters('Output_storageblob_dateFormat')]",
-                  "timeFormat": "[parameters('Output_storageblob_timeFormat')]",
-                  "authenticationMode": "[parameters('Output_storageblob_authenticationMode')]"
-                }
-              }
-            }
-          },
           {
             "name": "notificationshub",
             "properties": {
