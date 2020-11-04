@@ -32,13 +32,13 @@ In order to successfully deploy this solution, you will need a couple of things 
 
  
 
-## Architecture
+# Architecture
 
 ![Architecture reference](https://raw.githubusercontent.com/marvin-garcia/IoTGateway/master/Images/Architecture.png)
 
  
 
-## Getting started
+# Getting started
 
 Clone the repository:
 
@@ -63,14 +63,14 @@ Start the deployment:
 
 Once the solution has been successfully deployed, you may want to spend some time understanding each component:
 
-[OPC Simulator]: Docs/OpcSimulator.md
-[OPC Publisher]: Docs/OpCPublisher.md
-[Stream Analytics Edge job]: Docs/EdgeASA.md
-[OPC Translator]: Docs/OpcTranslator.md
-[Device Provisioning Service]: Docs/Dps.md
-[IoT Edge Deployment]: Docs/IoTEdgeDeployment.md
-[Cloud Stream Analytics job]: Docs/CloudASA.md
-[Notification & Alerting]: Docs/Notification/Alerting.md
-[Real-time data visualization through Time Series Insights]: Docs/TimeSeriesInsights.md
-[Data visualization through Azure Data Explorer]: DataExplorer.md
+1. [OPC Simulator](Docs/OpcSimulator.md)
+2. [OPC Publisher](Docs/OpCPublisher.md)
+3. [Stream Analytics Edge job](Docs/EdgeASA.md)
+4. [OPC Translator](Docs/OpcTranslator.md)
+5. [Device Provisioning Service](Docs/Dps.md)
+6. [IoT Edge Deployment](Docs/IoTEdgeDeployment.md)
+7. [Stream Analytics Cloud job](Docs/IoTEdgeDeployment.md)
+8. [Notification & Alerting](Docs/Notification/Alerting.md)
+9. [Real-time data visualization with Time Series Insights](Docs/TimeSeriesInsights.md)
+10. [Data visualization through Azure Data Explorer](DataExplorer.md)
 
