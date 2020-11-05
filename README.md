@@ -14,7 +14,7 @@ Often times I have seen customers and partners getting stuck at how to use Micro
 
  
 
-## Prerequisites
+## Pre-requisites
 
 In order to successfully deploy this solution, you will need a couple of things first:
 

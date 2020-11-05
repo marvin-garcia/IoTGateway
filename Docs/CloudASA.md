@@ -29,7 +29,7 @@ In this deployment, once messages arrive to the IoT Hub, they are processed by a
 
 
 
-This query focuses on redirecting events based on their nature to different outputs:
+For illustration purposes, this query focuses on redirecting events based on their nature to different outputs:
 
 - All events not labeled as *alerts* will be sent to the `telemetry` event hub
 - All events labeled as *alerts* will be sent to the `alerts` event hub
