@@ -64,13 +64,12 @@ Start the deployment:
 Once the solution has been successfully deployed, you may want to spend some time understanding each component:
 
 1. [OPC Simulator](Docs/OpcSimulator.md)
-2. [OPC Publisher](Docs/OpCPublisher.md)
+2. [OPC Publisher](Docs/OpcPublisher.md)
 3. [Stream Analytics Edge job](Docs/EdgeASA.md)
 4. [OPC Translator](Docs/OpcTranslator.md)
-5. [Device Provisioning Service](Docs/Dps.md)
-6. [IoT Edge Deployment](Docs/IoTEdgeDeployment.md)
-7. [Stream Analytics Cloud job](Docs/IoTEdgeDeployment.md)
-8. [Notification & Alerting](Docs/Notification/Alerting.md)
-9. [Real-time data visualization with Time Series Insights](Docs/TimeSeriesInsights.md)
-10. [Data visualization through Azure Data Explorer](DataExplorer.md)
+5. [IoT Edge Deployment](Docs/IoTEdgeDeployment.md)
+6. [Stream Analytics Cloud job](Docs/CloudASA.md)
+7. [Notification & Alerting](Docs/Notification/Alerting.md)
+8. [Real-time data visualization with Time Series Insights](Docs/TimeSeriesInsights.md)
+9. [Data visualization through Azure Data Explorer](DataExplorer.md)
 

@@ -8,7 +8,7 @@ This solution uses an Ubuntu 18.04 virtual machine to simulate what would be a r
 
 ## IoT Edge modules
 
-This IoT edge implementation consists of 3 edge modules: [OPC Publisher](./OpCPublisher.md), Azure Stream Analytics Edge [job](./EdgeASA.md) and [OPC translator](./OpcTranslator.md).
+This IoT edge implementation consists of 3 edge modules: [OPC Publisher](./OpcPublisher.md), Azure Stream Analytics Edge [job](./EdgeASA.md) and [OPC translator](./OpcTranslator.md).
 
 
 
@@ -37,7 +37,7 @@ In this repository, the [deployment template](../EdgeSolution/modules/OPC/layere
 
 Once the edge job is published, the following template content is replaced:
 
-- *____ASA_ENV____*is replaced with the *env* settings from the edge job published information
+- *____ASA_ENV____* is replaced with the *env* settings from the edge job published information
 - *____ASA_INPUT_NAME____*  is replaced with the first edge job input name
 - *____ASA_DESIRED_PROPERTIES____* is replaced with the edge job desired properties payload
 
@@ -70,7 +70,7 @@ Before you can create a deployment, you have to be able to specify which devices
 
 
 
-In this solution, when the IoT edge device is deployed through the [Device Provisioning Service](./Dps.md), it gets the following tags in its device twin:
+In this solution, when the IoT edge device is deployed using Device Provisioning Service, it gets the following tags in its device twin:
 
 ```json
 "tags": {
@@ -79,5 +79,5 @@ In this solution, when the IoT edge device is deployed through the [Device Provi
 }
 ```
 
-The device twin tag `__type__` is used to create the layered deployment in the IoT edge device in the [deployment script](../Scripts/deploy.ps1#L258)
+The device twin tag `__type__` is later used to create the layered deployment in the IoT edge device in the [deployment script](../Scripts/deploy.ps1#L284).
 

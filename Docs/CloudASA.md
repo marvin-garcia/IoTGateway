@@ -34,3 +34,4 @@ This query focuses on redirecting events based on their nature to different outp
 - All events not labeled as *alerts* will be sent to the `telemetry` event hub
 - All events labeled as *alerts* will be sent to the `alerts` event hub
 - All events where the tag `AlternatingBoolean` is set to `true` will be sent to the `notifications` event hub
+
