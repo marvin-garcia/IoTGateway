@@ -575,7 +575,6 @@
     "edgeNetworkSecurityGroupName": "[concat(parameters('edgeVmName'), '-nsg')]",
     "industrialIoTTemplateUrl": "https://raw.githubusercontent.com/Azure/Industrial-IoT",
     "industrialIoTBranchName": "master",
-    "industrialIoTSimulationProfile": "default",
     "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
     "iotHubEventsRoute": "events",
     "iotHubStorageEndpointName": "persistentstorage",
@@ -811,11 +810,11 @@
           "settings": {
               "fileUris": [
                   "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/simulation.sh')]",
-                  "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/', variables('industrialIoTSimulationProfile'), '.yml')]"
+                  "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/default.yaml')]"
               ]
           },
           "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash simulation.sh ', ' --admin ', parameters('adminUsername'), ' --name ', variables('industrialIoTSimulationProfile'), ' --imagesNamespace ', concat('\"', parameters('imagesNamespace'), '\"'), ' --imagesTag ', concat('\"', parameters('imagesTag'), '\"'), ' --dockerServer ', concat('\"', parameters('dockerServer'), '\"'), ' --dockerUser ', concat('\"', parameters('dockerUser'), '\"'), ' --dockerPassword ', concat('\"', parameters('dockerPassword'), '\"'))]"
+              "commandToExecute": "[concat('sudo bash simulation.sh ', ' --admin ', parameters('adminUsername'), ' --name ', 'default.yaml', ' --imagesNamespace ', concat('\"', parameters('imagesNamespace'), '\"'), ' --imagesTag ', concat('\"', parameters('imagesTag'), '\"'), ' --dockerServer ', concat('\"', parameters('dockerServer'), '\"'), ' --dockerUser ', concat('\"', parameters('dockerUser'), '\"'), ' --dockerPassword ', concat('\"', parameters('dockerPassword'), '\"'))]"
           }
       },
       "dependsOn": [
@@ -1483,21 +1482,21 @@
     //     "provisioningState": "Succeeded"
     //   }
     // },
-    {
-      "type": "Microsoft.Kusto/Clusters/Databases/PrincipalAssignments",
-      "apiVersion": "2020-06-14",
-      "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'), '/', parameters('adxAccessPrincipalAssignmentId'))]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
-        "[resourceId('Microsoft.Kusto/Clusters/Databases', parameters('adxClusterName'), parameters('adxDatabaseName'))]"
-      ],
-      "properties": {
-        "principalId": "[parameters('adxAccessPolicyPrincipalId')]",
-        "role": "[parameters('adxAccessPolicyRole')]",
-        "principalType": "[parameters('adxAccessPolicyPrincipalType')]",
-        "tenantId": "[subscription().tenantId]"
-      }
-    },
+    // {
+    //   "type": "Microsoft.Kusto/Clusters/Databases/PrincipalAssignments",
+    //   "apiVersion": "2020-06-14",
+    //   "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'), '/', parameters('adxAccessPrincipalAssignmentId'))]",
+    //   "dependsOn": [
+    //     "[resourceId('Microsoft.Kusto/Clusters', parameters('adxClusterName'))]",
+    //     "[resourceId('Microsoft.Kusto/Clusters/Databases', parameters('adxClusterName'), parameters('adxDatabaseName'))]"
+    //   ],
+    //   "properties": {
+    //     "principalId": "[parameters('adxAccessPolicyPrincipalId')]",
+    //     "role": "[parameters('adxAccessPolicyRole')]",
+    //     "principalType": "[parameters('adxAccessPolicyPrincipalType')]",
+    //     "tenantId": "[subscription().tenantId]"
+    //   }
+    // },
     {
       "comments": "Notifications event grid topic",
       "apiVersion": "2020-06-01",
