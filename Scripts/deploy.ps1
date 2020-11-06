@@ -1,23 +1,28 @@
-## https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-cicd-api
-
-function New-IIoTEnvironment(
-    [string]$webhook_url,
-    [bool]$deploy_time_series_insights = $true
-)
+function New-IIoTEnvironment()
 {
-    if (!$webhook_url)
+    Write-Host "Please provide a webhook URL for notifications and alerts. If you don't have one yet, you can get one for free at https://webhook.site/"
+    $webhook_url = Read-Host -Prompt ">"
+    
+    $deploy_time_series_insights = $false
+    $tsi_providers = $(az provider show -n 'Microsoft.TimeSeriesInsights')
+    if ($tsi_providers)
     {
-        Write-Error "You need to provide a webhook for notifications and alerts. If you don't have one yet, you can get one for free at https://webhook.site/"
-        return $null
+        $deploy_time_series_insights = $true
+    }
+    else
+    {
+        $deploy_time_series_insights = $false
+        Write-Warning "Unable to find TimeSeriesInsights provider. Deploymend will skip creating of Azure Time Series Insights service"
     }
 
     #region obtain deployment location
+    $locations = Get-ResourceGroupLocations -provider 'Microsoft.Devices' -typeName 'ProvisioningServices'
+    
     Write-Host "Please choose a location for your deployment from this list (using its Index):"
-    $script:index = 0
-    $locations | Format-Table -AutoSize -property `
-    @{Name = "Index"; Expression = { ($script:index++) } }, `
-    @{Name = "Location"; Expression = { $_.DisplayName } } `
-    | Out-Host
+    for ($index = 0; $index -lt $locations.Count; $index++)
+    {
+        Write-Host "$($index + 1): $($locations[$index])"
+    }
     while ($true)
     {
         $option = Read-Host -Prompt ">"
@@ -34,18 +39,16 @@ function New-IIoTEnvironment(
         }
         Write-Host "Choose from the list using an index between 1 and $($locations.Count)."
     }
-    $location = $locations[$option - 1].Location
+    $location_name = $locations[$option - 1]
+    $location = $location_name.Replace(' ', '').ToLower()
+    Write-Host "Using location $($location)"
     #endregion
 
     #region obtain resource group name
+    $resource_group = $null
     $first = $true
-    while ([string]::IsNullOrEmpty($script:resourceGroupName) `
-            -or ($script:resourceGroupName -notmatch "^[a-z0-9-_]*$"))
+    while ([string]::IsNullOrEmpty($resource_group) -or ($resource_group -notmatch "^[a-z0-9-_]*$"))
     {
-        if (!$script:interactive)
-        {
-            throw "Invalid resource group name specified which is mandatory for non-interactive script use."
-        }
         if ($first -eq $false)
         {
             Write-Host "Use alphanumeric characters as well as '-' or '_'."
@@ -56,38 +59,28 @@ function New-IIoTEnvironment(
             Write-Host "Please provide a name for the resource group."
             $first = $false
         }
-        $script:resourceGroupName = Read-Host -Prompt ">"
+        $resource_group = Read-Host -Prompt ">"
     }
 
-    $resourceGroup = Get-AzResourceGroup -Name $script:resourceGroupName `
-        -ErrorAction SilentlyContinue
+    $resourceGroup = az group show --name $resource_group | ConvertFrom-Json
     if (!$resourceGroup)
     {
-        Write-Host "Resource group '$script:resourceGroupName' does not exist."
-        Select-ResourceGroupLocation
-        $resourceGroup = New-AzResourceGroup -Name $script:resourceGroupName `
-            -Location $script:resourceGroupLocation
-        Write-Host "Created new resource group $($script:resourceGroupName) in $($resourceGroup.Location)."
-        Set-ResourceGroupTags -state "Created"
-        return $True
-    }
-    else
-    {
-        Set-ResourceGroupTags -state "Updating"
-        $script:resourceGroupLocation = $resourceGroup.Location
-        Write-Host "Using existing resource group $($script:resourceGroupName)..."
-        return $False
+        Write-Host "Resource group '$resource_group' does not exist."
+        
+        $resourceGroup = az group create --name $resource_group --location $location | ConvertFrom-Json
+        Write-Host "Created new resource group $($resource_group) in $($resourceGroup.location)."
     }
     #endregion
 
-    $env_hash = Get-EnvironmentHash -resource_group $resource_group
+    $env_hash = Get-EnvironmentHash
     $iot_hub_name = "iothub-$($env_hash)"
     $deployment_condition = "tags.__type__='iiotedge'"
 
-    # create resource group
-    Write-Host -ForegroundColor Yellow "`r`nCreating resource group $resource_group"
-    
-    az group create --name $resource_group --location $location
+    #region virtual machine details
+    $skus = az vm list-skus | ConvertFrom-Json -AsHashtable
+    $vm_skus = $skus | Where-Object { $_.resourceType -eq 'virtualMachines' -and $_.locations -contains $location -and $_.restrictions.Count -eq 0 }
+    $vm_sku_names = $vm_skus | Select-Object -ExpandProperty Name -Unique
+    #endregion
 
     #region create IoT platform
 
@@ -96,40 +89,40 @@ function New-IIoTEnvironment(
     $vm_username = "azureuser"
     $vm_password = New-Password -length $password_length
 
-    # OPC Sim VM parameters
+    #region OPC Sim VM parameters
     $sim_vm_name = "opc-sim"
-    # $sim_vm_dns = "$($sim_vm_name)-$($env_hash)"
 
     # We will use VM with at least 1 core and 2 GB of memory for hosting OPC PLC simulatoin containers.
-    $simulation_vm_sizes = Get-AzVMSize $script:resourceGroupLocation `
-    | Where-Object { $availableVmNames -icontains $_.Name } `
+    $sim_vm_sizes = az vm list-sizes --location $location | ConvertFrom-Json `
+    | Where-Object { $vm_sku_names -icontains $_.name } `
     | Where-Object {
-        ($_.NumberOfCores -ge 1) -and `
-        ($_.MemoryInMB -ge 2048) -and `
-        ($_.OSDiskSizeInMB -ge 1047552) -and `
-        ($_.ResourceDiskSizeInMB -ge 4096)
+        ($_.numberOfCores -ge 1) -and `
+        ($_.memoryInMB -ge 2048) -and `
+        ($_.osDiskSizeInMB -ge 1047552) -and `
+        ($_.resourceDiskSizeInMB -ge 4096)
     } `
     | Sort-Object -Property `
         NumberOfCores, MemoryInMB, ResourceDiskSizeInMB, Name
     # Pick top
-    if ($simulation_vm_sizes.Count -ne 0)
+    if ($sim_vm_sizes.Count -ne 0)
     {
-        $simulation_vm_size = $simulation_vm_sizes[0].Name
-        Write-Host "Using $($simulation_vm_size) as VM size for all edge simulation hosts..."
+        $sim_vm_size = $sim_vm_sizes[0].Name
+        Write-Host "Using $($sim_vm_size) as VM size for all edge simulation hosts..."
     }
+    #endregion
 
-    # IoT Edge VM parameters
+    #region IoT Edge VM parameters
     $edge_vm_name = "linuxgateway-1"
     $published_nodes_path = "/appdata/publishednodes.json"
     
     # We will use VM with at least 2 cores and 8 GB of memory as gateway host.
-    $edge_vm_sizes = Get-AzVMSize $script:resourceGroupLocation `
-        | Where-Object { $availableVmNames -icontains $_.Name } `
+    $edge_vm_sizes = az vm list-sizes --location $location | ConvertFrom-Json `
+        | Where-Object { $vm_sku_names -icontains $_.name } `
         | Where-Object {
-            ($_.NumberOfCores -ge 2) -and `
-            ($_.MemoryInMB -ge 8192) -and `
-            ($_.OSDiskSizeInMB -ge 1047552) -and `
-            ($_.ResourceDiskSizeInMB -gt 8192)
+            ($_.numberOfCores -ge 2) -and `
+            ($_.memoryInMB -ge 8192) -and `
+            ($_.osDiskSizeInMB -ge 1047552) -and `
+            ($_.resourceDiskSizeInMB -gt 8192)
         } `
         | Sort-Object -Property `
             NumberOfCores,MemoryInMB,ResourceDiskSizeInMB,Name
@@ -138,32 +131,20 @@ function New-IIoTEnvironment(
         $edge_vm_size = $edge_vm_sizes[0].Name
         Write-Host "Using $($edge_vm_size) as VM size for all edge simulation gateway hosts..."
     }
+    #endregion
 
-    # virtual network parameters
-    # $vnet_name = "iiot-$($env_hash)-vnet"
-    # $vnet_prefix = "10.0.0.0/16"
-    # $sim_subnet_name = "opc"
-    # $sim_subnet_prefix = "10.0.0.0/24"
-    # $edge_subnet_name = "iotedge"
-    # $edge_subnet_prefix = "10.0.1.0/24"
-
-    # datalake storage
-    # $persistent_storage_name = "telemetrystrg$($env_hash)"
-    # $persistent_storage_container = "telemetry"
+    #region virtual network parameters
+    $vnet_name = "iiot-vnet"
+    $vnet_prefix = "10.0.0.0/16"
+    $sim_subnet_name = "opc"
+    $sim_subnet_prefix = "10.0.0.0/24"
+    $edge_subnet_name = "iotedge"
+    $edge_subnet_prefix = "10.0.1.0/24"
+    #endregion
 
     # event hubs
     $eventhubs_message_retention = 7
-    # $eh_name = "eh-$($env_hash)"
-    # $eh_notifications_name = "notifications"
-    # $eh_notifications_la_consumer_group = "logicapp"
-    # $eh_alerts_name = "alerts"
-    # $eh_alerts_la_consumer_group = "logicapp"
-    # $eh_alerts_tsi_consumer_group = "timeseriesinsights"
-    # $eh_telemetry_name = "telemetry"
-    # $eh_telemetry_tsi_consumer_group = "timeseriesinsights"
-    # $eh_send_policy_name = "send"
-    # $eh_listen_policy_name = "listen"
-
+    
     # time series insights
     $tsi_name = "tsi-$($env_hash)"
     $tsi_sku = "L1"
@@ -178,7 +159,7 @@ function New-IIoTEnvironment(
     $userid = az ad user show --id $username --query objectId -o tsv
     if (!$userid)
     {
-        Write-Host -ForegroundColor Yellow "Unable to retrieve current user id. Contributors will have to be added manually to the TSI environment through the Azure Portal"
+        Write-Host "Unable to retrieve current user id. Contributors will have to be added manually to the TSI environment through the Azure Portal"
     }
 
     # edge stream analytics job
@@ -202,7 +183,7 @@ function New-IIoTEnvironment(
         "location" = @{ "value" = $location }
         "environmentHashId" = @{ "value" = $env_hash }
         "simVmName" = @{ "value" = $sim_vm_name }
-        "simVmSize" = @{ "value" = $simulation_vm_size }
+        "simVmSize" = @{ "value" = $sim_vm_size }
         "edgeVmName" = @{ "value" = $edge_vm_name }
         "edgeVmSize" = @{ "value" = $edge_vm_size }
         "edgeVmPublishedNodesPath" = @{ "value" = $published_nodes_path }
@@ -214,12 +195,6 @@ function New-IIoTEnvironment(
         "simSubnetAddressRange" = @{ "value" = $sim_subnet_prefix }
         "edgeSubnetName" = @{ "value" = $edge_subnet_name }
         "edgeSubnetAddressRange" = @{ "value" = $edge_subnet_prefix }
-        #"iotHubName" = @{ "value" = $iot_hub_name }
-        #"dpsName" = @{ "value" = "dps-$($env_hash)" }
-        "branchName" = @{ "value" = "opc-plc" }
-        #"datalakeName" = @{ "value" = $persistent_storage_name }
-        #"datalakeContainerName" = @{ "value" = $persistent_storage_container }
-        #"eventHubNamespaceName" = @{ "value" = $eh_name }
         "eventHubRetentionInDays" = @{ "value" = $eventhubs_message_retention }
         "deployTsiEnvironment"= @{ "value" = $deploy_time_series_insights }
         "tsiEnvironmentName" = @{ "value" =  $tsi_name }
@@ -234,7 +209,7 @@ function New-IIoTEnvironment(
         "adxAccessPolicyPrincipalId" = @{ "value" = $adx_principal_id }
         "adxAccessPolicyPrincipalType" = @{ "value" = $adx_principal_type }
         "adxAccessPolicyRole" = @{ "value" = $adx_access_role }
-        "adxAccessPrincipalAssignmentId" = @{ "value" = $userid }
+        "adxAccessPrincipalAssignmentId" = @{ "value" = (New-Guid).Guid }
         "notificationsWebhookUrl" = @{ "value" = $webhook_url }
         "alertsWebhookUrl" = @{ "value" = $webhook_url }
         "edgeASAJobName" = @{ "value" = $edge_asa_name }
@@ -246,12 +221,18 @@ function New-IIoTEnvironment(
     }
     Set-Content -Path ./Templates/azuredeploy.parameters.json -Value (ConvertTo-Json $platform_parameters -Depth 5)
 
+    Write-Host "Creating resource group deployment"
     $deployment_output = az deployment group create `
         --resource-group $resource_group `
-        --name 'IIoT' `
+        --name 'IndustrialIoT' `
         --mode Incremental `
         --template-file ./Templates/azuredeploy.json `
-        --parameters ./Templates/azuredeploy.parameters.json
+        --parameters ./Templates/azuredeploy.parameters.json | ConvertFrom-Json
+    
+    if (!$deployment_output)
+    {
+        throw "Something went wrong with the resource group deployment. Ending script."        
+    }
     #endregion
 
     #region edge deployment
@@ -259,7 +240,7 @@ function New-IIoTEnvironment(
     $priority = 1
 
     # publish edge stream analytics job
-    Write-Host -ForegroundColor Yellow "`r`nPublishing edge stream analytics job "
+    Write-Host "`r`nPublishing edge stream analytics job "
 
     $edge_package = Publish-StreamAnalyticsEdgeJob `
         -resource_group $resource_group `
@@ -273,7 +254,7 @@ function New-IIoTEnvironment(
     } | Set-Content -Path EdgeSolution/modules/OPC/layered.deployment.json
 
     # Create main deployment
-    Write-Host -ForegroundColor Yellow "`r`nCreating main IoT edge device deployment"
+    Write-Host "`r`nCreating main IoT edge device deployment"
 
     az iot edge deployment create `
         -d "main-deployment" `
@@ -282,7 +263,7 @@ function New-IIoTEnvironment(
         --target-condition=$deployment_condition
 
     # Create OPC layered deployment
-    Write-Host -ForegroundColor Yellow "`r`nCreating IoT edge layered deployment $opc_deployment_name-$priority"
+    Write-Host "`r`nCreating IoT edge layered deployment $opc_deployment_name-$priority"
 
     az iot edge deployment create `
         --layered `
@@ -306,9 +287,9 @@ function New-IIoTEnvironment(
     #endregion
 
     Write-Host ""
-    Write-Host -foregroundColor Yellow "OPC Sim & IoT Edge VM Credentials:"
-    Write-Host -foregroundColor Yellow "Username: $vm_username"
-    Write-Host -foregroundColor Yellow "Password: $vm_password"
+    Write-Host "OPC Sim & IoT Edge VM Credentials:"
+    Write-Host "Username: $vm_username"
+    Write-Host "Password: $vm_password"
 }
 
 Function New-Password() {
@@ -332,25 +313,23 @@ Function New-Password() {
 }
 
 function Get-EnvironmentHash(
-    
-    [string]$subscription_id,
-    [string]$resource_group,
-    [string]$username
+    [int]$hash_length = 8
 )
 {
-    if (!$subscription_id)
-    {
-        $subscription_id = az account show --query id -o tsv
-    }
-    if (!$username)
-    {
-        $username = az account show --query 'user.name' -o tsv
-    }
-    $hash_length = 8
-    $Bytes = [System.Text.Encoding]::Unicode.GetBytes("$resource_group-$username")
-    $env_hash = [Convert]::ToBase64String($Bytes).Substring(0, $hash_length).ToLower()
+    $env_hash = (New-Guid).Guid.Replace('-', '').Substring(0, $hash_length).ToLower()
 
     return $env_hash
+}
+
+Function Get-ResourceGroupLocations(
+    $provider,
+    $typeName
+)
+{
+    $providers = $(az provider show --namespace $provider | ConvertFrom-Json)
+    $resourceType = $providers.ResourceTypes | Where-Object { $_.ResourceType -eq $typeName }
+
+    return $resourceType.locations
 }
 
 function Publish-StreamAnalyticsEdgeJob(
@@ -408,7 +387,7 @@ function Add-TimeSeriesInsightsModel(
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     
     #region types
-    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights types"
+    Write-Host "`r`nCreating Time Series Insights types"
     
     $tsi_fqdn = az timeseriesinsights environment show -g $resource_group -n $tsi_name --query dataAccessFqdn -o tsv
     $types_uri = "https://$($tsi_fqdn)/timeseries/types/`$batch?api-version=2020-07-31"
@@ -421,7 +400,7 @@ function Add-TimeSeriesInsightsModel(
     #endregion
 
     #region hierarchies
-    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights hierarchies"
+    Write-Host "`r`nCreating Time Series Insights hierarchies"
     
     $hierarchies_uri = "https://$($tsi_fqdn)/timeseries/hierarchies/`$batch?api-version=2020-07-31"
     
@@ -433,7 +412,7 @@ function Add-TimeSeriesInsightsModel(
     #endregion
 
     #region instances
-    Write-Host -ForegroundColor Yellow "`r`nCreating Time Series Insights instances"
+    Write-Host "`r`nCreating Time Series Insights instances"
     
     $instances_uri = "https://$($tsi_fqdn)/timeseries/instances/`$batch?api-version=2020-07-31"
     
@@ -444,3 +423,5 @@ function Add-TimeSeriesInsightsModel(
         -Authentication Bearer -Token $secure_token
     #endregion
 }
+
+New-IIoTEnvironment

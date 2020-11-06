@@ -13,7 +13,7 @@
         "DipData": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.DipData.Double"
+            "tsx": "coalesce($event.DipData.Double, todouble($event.DipData.Long))"
           },
           "aggregation": {
             "tsx": "avg($value)"
@@ -22,7 +22,7 @@
         "SpikeData": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.SpikeData.Double"
+            "tsx": "coalesce($event.SpikeData.Double, todouble($event.SpikeData.Long))"
           },
           "aggregation": {
             "tsx": "avg($value)"
