@@ -810,11 +810,11 @@
           "settings": {
               "fileUris": [
                   "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/simulation.sh')]",
-                  "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/default.yaml')]"
+                  "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/default.yml')]"
               ]
           },
           "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash simulation.sh ', ' --admin ', parameters('adminUsername'), ' --name ', 'default.yaml', ' --imagesNamespace ', concat('\"', parameters('imagesNamespace'), '\"'), ' --imagesTag ', concat('\"', parameters('imagesTag'), '\"'), ' --dockerServer ', concat('\"', parameters('dockerServer'), '\"'), ' --dockerUser ', concat('\"', parameters('dockerUser'), '\"'), ' --dockerPassword ', concat('\"', parameters('dockerPassword'), '\"'))]"
+              "commandToExecute": "[concat('sudo bash simulation.sh ', ' --admin ', parameters('adminUsername'), ' --name ', 'default', ' --imagesNamespace ', concat('\"', parameters('imagesNamespace'), '\"'), ' --imagesTag ', concat('\"', parameters('imagesTag'), '\"'), ' --dockerServer ', concat('\"', parameters('dockerServer'), '\"'), ' --dockerUser ', concat('\"', parameters('dockerUser'), '\"'), ' --dockerPassword ', concat('\"', parameters('dockerPassword'), '\"'))]"
           }
       },
       "dependsOn": [
