@@ -277,12 +277,12 @@ function New-IIoTEnvironment()
     #region Tsime series insights modeling
     if ($deploy_time_series_insights)
     {
-        # Add-TimeSeriesInsightsModel `
-        #     -resource_group $resource_group `
-        #     -tsi_name $tsi_name `
-        #     -tsi_types (Get-Content -Path ./TimeSeriesInsights/Model/types.json) `
-        #     -tsi_hierarchies (Get-Content -Path ./TimeSeriesInsights/Model/hierarchies.json) `
-        #     -tsi_instances (Get-Content -Path ./TimeSeriesInsights/Model/instances.json)
+        Add-TimeSeriesInsightsModel `
+            -resource_group $resource_group `
+            -tsi_name $tsi_name `
+            -tsi_types (Get-Content -Path ./TimeSeriesInsights/Model/types.json) `
+            -tsi_hierarchies (Get-Content -Path ./TimeSeriesInsights/Model/hierarchies.json) `
+            -tsi_instances (Get-Content -Path ./TimeSeriesInsights/Model/instances.json)
     }
     #endregion
 
