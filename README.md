@@ -103,5 +103,5 @@ Once the solution has been successfully deployed, you may want to spend some tim
 6. [Stream Analytics Cloud job](Docs/CloudASA.md)
 7. [Notification & Alerting](Docs/Notification/Alerting.md)
 8. [Real-time data visualization with Time Series Insights](Docs/TimeSeriesInsights.md)
-9. [Data visualization through Azure Data Explorer](DataExplorer.md)
+9. [Data visualization through Azure Data Explorer](Docs/DataExplorer.md)
 
