@@ -26,13 +26,64 @@ The solution for the Stream Analytics Edge job can be found [here](../StreamAnal
 
 As mentioned previously, ASA on IoT Edge provides near-real-time analytical intelligence closer to IoT devices, so critical decisions can be made immediately to remediate issues or prevent operations going out of control. Since the purpose of this repository is to provide a solution accelerator for Industrial IoT deployments and also learn about the different components, the ASA edge job [query ](../StreamAnalytics/EdgeASA/EdgeASA.asaql) contains three sections:
 
-- [Telemetry forwarding statement](../StreamAnalytics/EdgeASA/EdgeASA.asaql#L36). All events received by the ASA edge job will be forwarded to the [telemetryoutput](../StreamAnalytics/EdgeASA/Outputs/telemetryoutput.json) output.
+- Telemetry forwarding. All events received by the ASA edge job will be forwarded to the [telemetryoutput](../StreamAnalytics/EdgeASA/Outputs/telemetryoutput.json) output.
+
+```sql
+SELECT 
+    *
+INTO telemetryoutput
+FROM streaminput
+```
+
+
 
 - . All `DipData` and `SpikeData` events received by the ASA edge job will be analyzed against a built-in machine learning based anomaly detection model for spikes and dips.
 
   > [!NOTE]: You can find more information about anomaly detection in Azure Stream Analytics [here](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-machine-learning-anomaly-detection).
 
-- [Alert forwarding statement](../StreamAnalytics/EdgeASA/EdgeASA.asaql#L17). All results from the `AnomalyDetection` statement will be forwarded to the [alertsoutput](../StreamAnalytics/EdgeASA/Outputs/alertsoutput.json) output.
+```sql
+WITH AnomalyDetection AS
+(
+	SELECT 
+        NodeId,
+        ApplicationUri,
+        DisplayName,
+        Value.value,
+        System.Timestamp() AS sourcetimestamp,
+		AnomalyDetection_SpikeAndDip(Value.value, 90, 120, 'spikesanddips') OVER(LIMIT DURATION(second, 150) WHEN DisplayName='DipData') AS dipscores,
+        AnomalyDetection_SpikeAndDip(Value.value, 90, 120, 'spikesanddips') OVER(LIMIT DURATION(second, 150) WHEN DisplayName='SpikeData') AS spikescores
+    FROM streaminput
+    WHERE
+        DisplayName = 'DipData'
+    OR
+        DisplayName = 'SpikeData'
+)
+```
+
+
+
+- Alerts forwarding. All results from the `AnomalyDetection` statement will be forwarded to the [alertsoutput](../StreamAnalytics/EdgeASA/Outputs/alertsoutput.json) output.
+
+```sql
+SELECT
+	nodeid,
+    applicationuri,
+    sourcetimestamp,
+    displayname as tag,
+    value,
+    CASE
+        WHEN CAST(GetRecordPropertyValue(dipscores, 'IsAnomaly') AS bigint) > 0 THEN CAST(1 AS bigint)
+        WHEN CAST(GetRecordPropertyValue(spikescores, 'IsAnomaly') AS bigint) > 0 THEN CAST(1 AS bigint)
+        ELSE CAST(0 AS bigint)
+    END AS isalert,
+    CASE displayname
+        WHEN 'DipData' THEN CAST(GetRecordPropertyValue(dipscores, 'Score') AS float)
+        WHEN 'SpikeData' THEN CAST(GetRecordPropertyValue(spikescores, 'Score') AS float)
+        ELSE CAST(0 AS float)
+    END AS anomalyscore
+INTO alertsoutput
+FROM AnomalyDetection
+```
 
 
 
