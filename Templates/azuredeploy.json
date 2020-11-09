@@ -809,7 +809,7 @@
           "autoUpgradeMinorVersion": true,
           "settings": {
               "fileUris": [
-                  "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/simulation.sh')]",
+                  "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/simulation.sh')]",
                   "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/default.yml')]"
               ]
           },
@@ -949,9 +949,9 @@
         "autoUpgradeMinorVersion": true,
         "settings": {
           "fileUris": [
-            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/dps-enroll.ps1')]",
-            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.ps1')]",
-            "[concat(variables('industrialIoTTemplateUrl'), '/', variables('industrialIoTBranchName'), '/deploy/scripts/edge-setup.sh')]"
+            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/dps-enroll.ps1')]",
+            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/edge-setup.ps1')]",
+            "[concat(parameters('templateUrl'), '/', parameters('branchName'), '/Scripts/edge-setup.sh')]"
           ]
         },
         "protectedSettings": {

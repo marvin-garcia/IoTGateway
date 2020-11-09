@@ -31,7 +31,7 @@
         "PositiveTrendData": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.PositiveTrendData.Double"
+            "tsx": "$event.PositiveTrendData.Long"
           },
           "aggregation": {
             "tsx": "avg($value)"
@@ -40,7 +40,7 @@
         "NegativeTrendData": {
           "kind": "numeric",
           "value": {
-            "tsx": "$event.NegativeTrendData.Double"
+            "tsx": "$event.NegativeTrendData.Long"
           },
           "aggregation": {
             "tsx": "avg($value)"
@@ -58,10 +58,10 @@
         "AlternatingBoolean": {
           "kind": "numeric",
           "value": {
-            "tsx": "toDouble(iff($event.AlternatingBoolean.Bool, 1, 0))"
+            "tsx": "toLong(iff($event.AlternatingBoolean.Bool, 1, 0))"
           },
           "aggregation": {
-            "tsx": "last($value)"
+            "tsx": "avg($value)"
           }
         },
         "DipAlert": {

@@ -2,32 +2,32 @@
   "OpcNodes": [
     {
       "Id": "ns=2;s=DipData",
-      "OpcPublishingInterval": 5000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "DipData"
     },
     {
       "Id": "ns=2;s=SpikeData",
-      "OpcPublishingInterval": 5000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "SpikeData"
     },
     {
       "Id": "ns=2;s=AlternatingBoolean",
-      "OpcPublishingInterval": 30000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "AlternatingBoolean"
     },
     {
       "Id": "ns=2;s=NegativeTrendData",
-      "OpcPublishingInterval": 10000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "NegativeTrendData"
     },
     {
       "Id": "ns=2;s=PositiveTrendData",
-      "OpcPublishingInterval": 10000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "PositiveTrendData"
     },
     {
       "Id": "ns=2;s=RandomSignedInt32",
-      "OpcPublishingInterval": 10000,
+      "OpcPublishingInterval": 15000,
       "DisplayName": "RandomSignedInt32"
     }
   ]
