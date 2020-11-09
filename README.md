@@ -40,6 +40,42 @@ In order to successfully deploy this solution, you will need a couple of things 
 
 # Getting started
 
+
+
+### Webhook validation
+
+> [!IMPORTANT:] Please read the section below, as it details steps needed for your deployment to succeed.
+
+Shortly after the deployment starts, your webhook will receive two messages containing a validation URL that needs to be triggered in order for the deployment to succeed. That is because at the time of event subscription creation/update, Event Grid posts a validation event to the target endpoint that includes a  `validationUrl` property with a URL for manually validating the subscription. You need to copy the `validationUrl` property and open it on your browser within 5 minutes of the event subscription creation/update. Failure to complete these steps will cause the deployment to partially fail.
+
+An example subscription validation event is shown below:
+
+```json
+[
+  {
+    "id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
+    "topic": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "subject": "",
+    "data": {
+      "validationCode": "512d38b6-c7b8-40c8-89fe-f46f9e9622b6",
+      "validationUrl": "https://rp-eastus2.eventgrid.azure.net:553/eventsubscriptions/estest/validate?id=512d38b6-c7b8-40c8-89fe-f46f9e9622b6&t=2018-04-26T20:30:54.4538837Z&apiVersion=2018-05-01-preview&token=1A1A1A1A"
+    },
+    "eventType": "Microsoft.EventGrid.SubscriptionValidationEvent",
+    "eventTime": "2018-01-25T22:12:19.4556811Z",
+    "metadataVersion": "1",
+    "dataVersion": "1"
+  }
+]
+```
+
+
+
+After calling the validation URL from your browser, you should see the success message *"Webhook successfully validated as a subscription endpoint."*.
+
+
+
+## Deployment Start
+
 Clone the repository:
 
 ```powershell
@@ -50,12 +86,8 @@ cd IoTGateway
 Start the deployment:
 
 ```powershell
-. ./Scripts/deploy.ps1 -webhook_url <webhook url> -deploy_time_series_insights $true
+. ./Scripts/deploy.ps1
 ```
-
-
-
-> [!IMPORTANT]: If you don’t want to include Time Series Insights in the deployment, set *deploy_time_series_insights* to **$false**
 
  
 
