@@ -18,7 +18,7 @@ Often times I have seen customers and partners getting stuck at how to use Micro
 
 In order to successfully deploy this solution, you will need a couple of things first:
 
-·     **PowerShell**. This deployment script is written in PowerShell. If you are using a Linux environment, follow these [instructions](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux?view=powershell-7) to install PowerShell on Linux.
+·     **PowerShell 7**. This deployment script is written in PowerShell. If you are using a Linux environment, follow these [instructions](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux?view=powershell-7) to install PowerShell on Linux.
 
 ·     **Azure CLI**. Follow these [instructions](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) to install or update to the latest version.
 
@@ -101,7 +101,7 @@ Once the solution has been successfully deployed, you may want to spend some tim
 4. [OPC Translator](Docs/OpcTranslator.md)
 5. [IoT Edge Deployment](Docs/IoTEdgeDeployment.md)
 6. [Stream Analytics Cloud job](Docs/CloudASA.md)
-7. [Notification & Alerting](Docs/Notification/Alerting.md)
+7. [Notification & Alerting](Docs/NotificationAlerting.md)
 8. [Real-time data visualization with Time Series Insights](Docs/TimeSeriesInsights.md)
-9. [Data visualization through Azure Data Explorer](DataExplorer.md)
+9. [Data visualization through Azure Data Explorer](Docs/DataExplorer.md)
 

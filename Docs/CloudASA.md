@@ -29,9 +29,50 @@ In this deployment, once messages arrive to the IoT Hub, they are processed by a
 
 
 
-For illustration purposes, this query focuses on redirecting events based on their nature to different outputs:
+For demonstration purposes, this query focuses on redirecting events based on their nature to different outputs:
 
 - All events not labeled as *alerts* will be sent to the `telemetry` event hub
+
+  ```sql
+  SELECT
+      *,
+      iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+  INTO telemetryhub
+  FROM iothub
+  WHERE isalert IS NULL
+  ```
+
+  
+
 - All events labeled as *alerts* will be sent to the `alerts` event hub
+
+  ```sql
+  SELECT
+      nodeid AS NodeId,
+      applicationuri AS ApplicationUri,
+      sourcetimestamp AS SourceTimestamp,
+      tag AS Tag,
+      value AS Value,
+      isalert AS IsAlert,
+      anomalyscore AS AnomalyScore,
+      iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+  INTO alertshub
+  FROM iothub
+  WHERE isalert IS NOT NULL
+  ```
+
+  
+
 - All events where the tag `AlternatingBoolean` is set to `true` will be sent to the `notifications` event hub
+
+  ```sql
+  SELECT
+      *,
+      iothub.IoTHub.ConnectionDeviceId AS ConnectionDeviceId
+  INTO notificationshub
+  FROM iothub
+  WHERE AlternatingBoolean > 0
+  ```
+
+  
 

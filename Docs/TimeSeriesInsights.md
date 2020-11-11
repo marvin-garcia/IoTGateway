@@ -8,7 +8,7 @@ The following diagram shows the high-level data flow:
 
 
 
-> [!IMPORTANT:] There are two versions of Time Series Insights: Gen 1 and Gen2. The service we are referring to in this tutorial is Gen2.
+> [!IMPORTANT:] There are two versions of Time Series Insights: Gen1 and Gen2. The service we are referring to in this tutorial is Gen2.
 
 
 

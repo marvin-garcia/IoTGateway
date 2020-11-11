@@ -40,3 +40,7 @@ By using a key: value method for tag name and tag it becomes easier to model thi
 
 
 The Docker image is available at [Docker Hub](https://hub.docker.com/r/marvingarcia/iotedge-opc-dtdl), but you can customize and build your own [here](../EdgeSolution/modules/OPC/Translator/).
+
+
+
+> [!NOTE:] This edge module is not required to have a production environment for Industrial IoT applications. Hopefully, as technology progresses and OPC UA implementations at the edge keep maturing, there will be better seamless compatibility between those data formats and cloud services. This tutorial just wants to demonstrate that this is one of the many data manipulation methods available to you.
