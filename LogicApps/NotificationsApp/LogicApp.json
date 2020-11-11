@@ -48,7 +48,13 @@
         "southafricawest",
         "switzerlandnorth",
         "germanynorth",
-        "germanywestcentral"
+        "germanywestcentral",
+        "usdodcentral",
+        "usdodeast",
+        "usgovarizona",
+        "usgoviowa",
+        "usgovtexas",
+        "usgovvirginia"
       ],
       "metadata": {
         "description": "Location of the Logic App."
