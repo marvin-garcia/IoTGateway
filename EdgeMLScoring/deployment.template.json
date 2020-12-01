@@ -1,0 +1,51 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules": {
+          "opcPublisher": {
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
+              "createOptions": "{\"Hostname\":\"opcPublisher\",\"Cmd\":[\"publisher\",\"--aa\",\"--pf=/appdata/publishednodes.json\"],\"HostConfig\":{\"PortBindings\":{\"9080/tcp\":[{\"HostPort\":\"9080\"}]},\"Binds\":[\"/appdata:/appdata\"]}}"
+            }
+          },
+          "predictivesample": {
+            "restartPolicy": "always",
+            "settings": {
+              "createOptions": "{\"Hostname\":\"predictivesample\",\"HostConfig\":{\"PortBindings\":{\"5000/tcp\":[{\"HostPort\":\"5000\"}]}}}",
+              "image": "marvingarcia/predictivesample:0.0.3-amd64"
+            },
+            "status": "running",
+            "type": "docker",
+            "version": "1.0"
+          },
+          "scoringmodule": {
+            "env": {
+              "SCORING_ENDPOINT": {
+                "value": "http://predictivesample:5000/score"
+              }
+            },
+            "restartPolicy": "always",
+            "settings": {
+              "createOptions": "",
+              "image": "marvingarcia/scoringmodule:0.0.7-amd64"
+            },
+            "status": "running",
+            "type": "docker",
+            "version": "1.0"
+          }
+        }
+      },
+      "$edgeHub": {
+        "properties.desired.routes": {
+          "PublisherToScoring": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/scoringmodule/input/input1\")",
+          "ScoringModuleToHub": "FROM /messages/modules/scoringmodule/outputs/* INTO $upstream"
+        }
+      }
+    }
+  }
+}
