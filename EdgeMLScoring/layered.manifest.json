@@ -1,0 +1,37 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules.predictivesample": {
+          "settings": {
+            "image": "marvingarcia/predictivesample:0.0.3-amd64",
+            "createOptions": "{\"Hostname\":\"predictivesample\",\"HostConfig\":{\"PortBindings\":{\"5000/tcp\":[{\"HostPort\":\"5000\"}]}}}"
+          },
+          "type": "docker",
+          "status": "running",
+          "restartPolicy": "always",
+          "version": "1.0"
+        },
+        "properties.desired.modules.scoringmodule": {
+          "settings": {
+            "image": "marvingarcia/scoringmodule:0.0.7-amd64",
+            "createOptions": ""
+          },
+          "type": "docker",
+          "env": {
+            "SCORING_ENDPOINT": {
+              "value": "http://predictivesample:5000/score"
+            }
+          },
+          "status": "running",
+          "restartPolicy": "always",
+          "version": "1.0"
+        }
+      },
+      "$edgeHub": {
+        "properties.desired.routes.PublisherToScoring": "FROM /messages/modules/opcPublisher/* INTO BrokeredEndpoint(\"modules/scoringmodule/input/input1\")",
+        "properties.desired.routes.ScoringModuleToHub": "FROM /messages/modules/scoringmodule/outputs/* INTO $upstream"
+      }
+    }
+  }
+}
