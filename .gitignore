@@ -374,3 +374,6 @@ TimeSeriesInsights/azuredeploy.parameters.json
 StreamAnalytics/EdgeASA/Inputs/iothub.json
 StreamAnalytics/SampleOpcOutput.json
 Templates/azuredeploy.parameters.json
+EdgeWebApp/modules/EdgeWebApp/https/csr.pem
+EdgeWebApp/modules/EdgeWebApp/https/https.crt
+EdgeWebApp/modules/EdgeWebApp/https/key.pem
