@@ -1,0 +1,32 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules.edgewebapp": {
+          "settings": {
+            "image": "marvingarcia/edgewebapp",
+            "createOptions": "{\"HostConfig\": {\"Hostname\":\"edgewebapp\", \"Binds\": [\"/https:/https\" ], \"PortBindings\": {\"443/tcp\": [{\"HostPort\":\"5001\" } ], \"80/tcp\": [{\"HostPort\":\"5000\" }]}}}"
+          },
+          "env": {
+            "ASPNETCORE_Kestrel__Certificates__Default__Path": {
+              "value": "/https/https.pfx"
+            },
+            "ASPNETCORE_Kestrel__Certificates__Default__Password": {
+              "value": "P@ssw0rd1!"
+            },
+            "ASPNETCORE_HTTPS_PORT": {
+              "value": 443
+            },
+            "ASPNETCORE_URLS": {
+              "value": "https://+;http://+"
+            }
+          },
+          "type": "docker",
+          "status": "running",
+          "restartPolicy": "always",
+          "version": "1.0"
+        }
+      }
+    }
+  }
+}
