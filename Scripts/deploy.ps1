@@ -12,7 +12,7 @@ function New-IIoTEnvironment()
     else
     {
         $deploy_time_series_insights = $false
-        Write-Warning "Unable to find TimeSeriesInsights provider. Deploymend will skip creating of Azure Time Series Insights service"
+        Write-Warning "Unable to find TimeSeriesInsights provider. Deploymend will skip the creation of Azure Time Series Insights"
     }
 
     #region obtain deployment location
@@ -174,6 +174,15 @@ function New-IIoTEnvironment()
 
     # data explorer
     $adx_cluster_name = "adx$($env_hash)"
+    if ($location.StartsWith("usdod") -or $location.StartsWith("usgov"))
+    {
+        $adx_cluster_sku = "Dev(No SLA)_Standard_D11_v2"
+    }
+    else
+    {
+        $adx_cluster_sku = "Dev(No SLA)_Standard_E2a_v4"
+    }
+
     $adx_db_name = "TelemetryDB"
     $adx_principal_id = $username
     $adx_principal_type = "User"
@@ -205,6 +214,7 @@ function New-IIoTEnvironment()
         "tsiTimestampPropertyName" = @{ "value" =  $tsi_timestamp_property }
         "tsiAccessPolicyObjectId" = @{ "value" = $userid }
         "adxClusterName" = @{ "value" = $adx_cluster_name }
+        "adxClusterSku" = @{ "value" = $adx_cluster_sku }
         "adxDatabaseName" = @{ "value" = $adx_db_name }
         "adxAccessPolicyPrincipalId" = @{ "value" = $adx_principal_id }
         "adxAccessPolicyPrincipalType" = @{ "value" = $adx_principal_type }
@@ -233,6 +243,8 @@ function New-IIoTEnvironment()
     {
         throw "Something went wrong with the resource group deployment. Ending script."        
     }
+
+    $deployment_output | Out-String
     #endregion
 
     #region edge deployment
@@ -335,6 +347,7 @@ Function Get-ResourceGroupLocations(
 function Publish-StreamAnalyticsEdgeJob(
     [string]$subscription_id,
     [string]$resource_group,
+    [string]$location,
     [string]$job_name
 )
 {
@@ -342,9 +355,24 @@ function Publish-StreamAnalyticsEdgeJob(
     {
         $subscription_id = az account show --query id -o tsv
     }
+    if (!$location)
+    {
+        $location = az group show -n $resource_group --query location -o tsv
+    }
+
     $token = az account get-access-token --resource-type arm --query accessToken -o tsv
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
-    $publish_uri = "https://management.azure.com/subscriptions/$($subscription_id)/resourceGroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)/publishedgepackage?api-version=2017-04-01-preview"
+    
+    if ($location.StartsWith("usdod") -or $location.StartsWith("usgov"))
+    {
+        $base_uri = "https://management.usgovcloudapi.net"
+    }
+    else
+    {
+        $base_uri = "https://management.azure.com"
+    }
+
+    $publish_uri = "$($base_uri)/subscriptions/$($subscription_id)/resourceGroups/$($resource_group)/providers/Microsoft.StreamAnalytics/streamingjobs/$($job_name)/publishedgepackage?api-version=2017-04-01-preview"
     $publish_response = Invoke-WebRequest $publish_uri `
         -Method POST `
         -Authentication Bearer -Token $secure_token

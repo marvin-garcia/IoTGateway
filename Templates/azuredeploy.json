@@ -361,6 +361,10 @@
     "adxClusterSku": {
       "type": "string",
       "defaultValue": "Dev(No SLA)_Standard_E2a_v4",
+      "allowedValues": [
+        "Dev(No SLA)_Standard_E2a_v4",
+        "Dev(No SLA)_Standard_D11_v2"
+      ],
       "metadata": {
         "description": "Azure Data Factory cluster Sku."
       }
@@ -913,10 +917,10 @@
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "microsoft_iot_edge",
-            "offer": "iot_edge_vm_ubuntu",
-            "sku": "ubuntu_1604_edgeruntimeonly",
-            "version": "1.0.1"
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "16.04.0-LTS",
+            "version": "latest"
           },
           "osDisk": {
             "createOption": "fromImage"
@@ -929,12 +933,12 @@
             }
           ]
         }
-      },
-      "plan": {
-        "name": "ubuntu_1604_edgeruntimeonly",
-        "publisher": "microsoft_iot_edge",
-        "product": "iot_edge_vm_ubuntu"
       }
+      // "plan": {
+      //   "name": "ubuntu_1604_edgeruntimeonly",
+      //   "publisher": "microsoft_iot_edge",
+      //   "product": "iot_edge_vm_ubuntu"
+      // }
     },
     {
       "comments": "One time script to configure and onboard the IoT edge virtual machine",
