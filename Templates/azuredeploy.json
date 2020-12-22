@@ -587,6 +587,7 @@
     "industrialIoTTemplateUrl": "https://raw.githubusercontent.com/Azure/Industrial-IoT",
     "industrialIoTBranchName": "master",
     "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+    "iotHubDomain": "[if(startsWith(parameters('location'), 'usgov'), '.azure-devices.us', if(startsWith(parameters('location'), 'usdod'), '.azure-devices.us', '.azure-devices.net'))]",
     "iotHubEventsRoute": "events",
     "iotHubStorageEndpointName": "persistentstorage",
     "iotHubOwnerPolicyName": "iothubowner",
@@ -1191,7 +1192,7 @@
           {
             "connectionString": "[concat('HostName=', reference(resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))).hostName, ';SharedAccessKeyName=iothubowner', ';SharedAccessKey=', listKeys(resourceId('Microsoft.Devices/IotHubs', variables('iotHubName')), providers('Microsoft.Devices', 'IoTHubs').apiVersions[0]).value[0].primaryKey)]",
             "location": "[parameters('dpsLocation')]",
-            "name": "[concat(variables('iotHubName'),'.azure-devices.net')]"
+            "name": "[concat(variables('iotHubName'), variables('iotHubDomain'))]"
           }
         ]
       }
