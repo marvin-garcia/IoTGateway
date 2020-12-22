@@ -352,6 +352,13 @@
         "description": "ISO duration between 7 and 31 days. Remove the 'warmStoreConfiguration' property from the envrionment to delete the warm store."
       }
     },
+    "deployAdxCluster": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create an Azure Data Factory cluster."
+      }
+    },
     "adxClusterName": {
       "type": "string",
       "metadata": {
@@ -1546,6 +1553,7 @@
     },
     {
       "comments": "Deploy Azure Data Explorer cluster",
+      "condition": "[parameters('deployAdxCluster')]",
       "type": "Microsoft.Kusto/Clusters",
       "apiVersion": "2020-06-14",
       "name": "[parameters('adxClusterName')]",
@@ -1565,6 +1573,7 @@
     },
     {
       "comments": "Deploy Azure Data Explorer database",
+      "condition": "[parameters('deployAdxCluster')]",
       "type": "Microsoft.Kusto/Clusters/Databases",
       "apiVersion": "2020-06-14",
       "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'))]",
