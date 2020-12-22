@@ -574,6 +574,7 @@
     "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
     "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
+    "dpsGlobalEndpoint": "[if(startsWith(parameters('location'), 'usgov'), 'global.azure-devices-provisioning.us', if(startsWith(parameters('location'), 'usdod'), 'global.azure-devices-provisioning.us', 'dps-57ea53da.azure-devices-provisioning.net'))]",
     "datalakeName": "[concat('telemetrystorage', parameters('environmentHashId'))]",
     "datalakeContainerName": "telemetry",
     "eventHubNamespaceName": "[concat('eh-', parameters('environmentHashId'))]",
@@ -967,7 +968,7 @@
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"')]"
+          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"', '--dpsGlobalEndpoint ', '\"', variables('dpsGlobalEndpoint'), '\"')]"
         }
       },
       "dependsOn": [
