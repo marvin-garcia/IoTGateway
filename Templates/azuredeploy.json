@@ -1050,7 +1050,7 @@
     },
     {
       "comments": "Azure IoT Hub",
-      "apiVersion": "2020-03-01",
+      "apiVersion": "2020-07-10-preview",
       "type": "Microsoft.Devices/Iothubs",
       "name": "[variables('iotHubName')]",
       "location": "[resourceGroup().location]",
@@ -1154,7 +1154,8 @@
             "maxDeliveryCount": 10
           }
         },
-        "features": "None"
+        "features": "None",
+        "minTlsVersion": "1.2"
       }
     },
     {
