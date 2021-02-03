@@ -13,6 +13,8 @@
 #>
 param(
     [Parameter(Mandatory)]
+    [string] $dpsGlobalEndpoint,
+    [Parameter(Mandatory)]
     [string] $dpsConnString,
     [Parameter(Mandatory)]
     [string] $idScope
@@ -57,7 +59,7 @@ if ($PsVersionTable.Platform -eq "Unix") {
     $configyml += "`n"
     $configyml += "`nprovisioning:"
     $configyml += "`n  source: `"dps`""
-    $configyml += "`n  global_endpoint: `"https://global.azure-devices-provisioning.net`""
+    $configyml += "`n  global_endpoint: `"$dpsGlobalEndpoint`""
     $configyml += "`n  scope_id: `"$($idScope)`""
     $configyml += "`n  attestation:"
     $configyml += "`n    method: `"symmetric_key`""

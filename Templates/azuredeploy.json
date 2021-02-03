@@ -352,6 +352,13 @@
         "description": "ISO duration between 7 and 31 days. Remove the 'warmStoreConfiguration' property from the envrionment to delete the warm store."
       }
     },
+    "deployAdxCluster": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create an Azure Data Factory cluster."
+      }
+    },
     "adxClusterName": {
       "type": "string",
       "metadata": {
@@ -361,6 +368,10 @@
     "adxClusterSku": {
       "type": "string",
       "defaultValue": "Dev(No SLA)_Standard_E2a_v4",
+      "allowedValues": [
+        "Dev(No SLA)_Standard_E2a_v4",
+        "Dev(No SLA)_Standard_D11_v2"
+      ],
       "metadata": {
         "description": "Azure Data Factory cluster Sku."
       }
@@ -563,6 +574,7 @@
     "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
     "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
+    "dpsGlobalEndpoint": "[if(startsWith(parameters('location'), 'usgov'), 'global.azure-devices-provisioning.us', if(startsWith(parameters('location'), 'usdod'), 'global.azure-devices-provisioning.us', 'dps-57ea53da.azure-devices-provisioning.net'))]",
     "datalakeName": "[concat('telemetrystorage', parameters('environmentHashId'))]",
     "datalakeContainerName": "telemetry",
     "eventHubNamespaceName": "[concat('eh-', parameters('environmentHashId'))]",
@@ -576,6 +588,7 @@
     "industrialIoTTemplateUrl": "https://raw.githubusercontent.com/Azure/Industrial-IoT",
     "industrialIoTBranchName": "master",
     "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))]",
+    "iotHubDomain": "[if(startsWith(parameters('location'), 'usgov'), '.azure-devices.us', if(startsWith(parameters('location'), 'usdod'), '.azure-devices.us', '.azure-devices.net'))]",
     "iotHubEventsRoute": "events",
     "iotHubStorageEndpointName": "persistentstorage",
     "iotHubOwnerPolicyName": "iothubowner",
@@ -913,10 +926,10 @@
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "microsoft_iot_edge",
-            "offer": "iot_edge_vm_ubuntu",
-            "sku": "ubuntu_1604_edgeruntimeonly",
-            "version": "1.0.1"
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "16.04.0-LTS",
+            "version": "latest"
           },
           "osDisk": {
             "createOption": "fromImage"
@@ -929,12 +942,12 @@
             }
           ]
         }
-      },
-      "plan": {
-        "name": "ubuntu_1604_edgeruntimeonly",
-        "publisher": "microsoft_iot_edge",
-        "product": "iot_edge_vm_ubuntu"
       }
+      // "plan": {
+      //   "name": "ubuntu_1604_edgeruntimeonly",
+      //   "publisher": "microsoft_iot_edge",
+      //   "product": "iot_edge_vm_ubuntu"
+      // }
     },
     {
       "comments": "One time script to configure and onboard the IoT edge virtual machine",
@@ -955,7 +968,7 @@
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"')]"
+          "commandToExecute": "[concat('sudo bash edge-setup.sh --idScope \"', reference(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).idScope, '\" --dpsConnString \"', 'HostName=', variables('dpsName'), '.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=', listKeys(variables('dpsResourceId'), providers('Microsoft.Devices', 'ProvisioningServices').apiVersions[0]).value[0].primaryKey, '\"', '--dpsGlobalEndpoint ', '\"', variables('dpsGlobalEndpoint'), '\"')]"
         }
       },
       "dependsOn": [
@@ -1046,7 +1059,7 @@
     },
     {
       "comments": "Azure IoT Hub",
-      "apiVersion": "2020-03-01",
+      "apiVersion": "2020-07-10-preview",
       "type": "Microsoft.Devices/Iothubs",
       "name": "[variables('iotHubName')]",
       "location": "[resourceGroup().location]",
@@ -1150,7 +1163,8 @@
             "maxDeliveryCount": 10
           }
         },
-        "features": "None"
+        "features": "None",
+        "minTlsVersion": "1.2"
       }
     },
     {
@@ -1179,7 +1193,7 @@
           {
             "connectionString": "[concat('HostName=', reference(resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))).hostName, ';SharedAccessKeyName=iothubowner', ';SharedAccessKey=', listKeys(resourceId('Microsoft.Devices/IotHubs', variables('iotHubName')), providers('Microsoft.Devices', 'IoTHubs').apiVersions[0]).value[0].primaryKey)]",
             "location": "[parameters('dpsLocation')]",
-            "name": "[concat(variables('iotHubName'),'.azure-devices.net')]"
+            "name": "[concat(variables('iotHubName'), variables('iotHubDomain'))]"
           }
         ]
       }
@@ -1541,6 +1555,7 @@
     },
     {
       "comments": "Deploy Azure Data Explorer cluster",
+      "condition": "[parameters('deployAdxCluster')]",
       "type": "Microsoft.Kusto/Clusters",
       "apiVersion": "2020-06-14",
       "name": "[parameters('adxClusterName')]",
@@ -1560,6 +1575,7 @@
     },
     {
       "comments": "Deploy Azure Data Explorer database",
+      "condition": "[parameters('deployAdxCluster')]",
       "type": "Microsoft.Kusto/Clusters/Databases",
       "apiVersion": "2020-06-14",
       "name": "[concat(parameters('adxClusterName'), '/', parameters('adxDatabaseName'))]",
