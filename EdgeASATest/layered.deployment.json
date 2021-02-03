@@ -1,0 +1,55 @@
+{
+  "content": {
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired.modules": {
+          "SimulatedTemperatureSensor": {
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.0",
+              "createOptions": ""
+            },
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always"
+          },
+          "StreamAnalytics": {
+            "settings": {
+              "image": "mcr.microsoft.com/azure-stream-analytics/azureiotedge:1.0.8",
+              "createOptions": ""
+            },
+            "env": {
+              "PlanId": {
+                "value": "stream-analytics-on-iot-edge"
+              }
+            },
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always"
+          }
+        }
+      },
+      "$edgeHub": {
+        "properties.desired.routes": {
+          "SimulatedSensorToStreamAnalytics": "FROM /messages/modules/SimulatedTemperatureSensor/* INTO BrokeredEndpoint(\"modules/StreamAnalytics/inputs/input1\")",
+          "StreamAnalyticsToHub": "FROM /messages/modules/StreamAnalytics/* INTO $upstream"
+        }
+      },
+      "SimulatedTemperatureSensor": {
+        "properties.desired": {
+          "SendData": true,
+          "SendInterval": 5
+        }
+      },
+      "StreamAnalytics": {
+        "properties.desired": {
+          "ASAJobInfo": "https://edegasapublishstrg.blob.core.windows.net/edgeasa/ASAEdgeJobs/80fe6ae8-2326-4827-8596-0eab6495fdd4/dfedb4ae-b8cf-4de4-94b4-e62d92d086be/ASAEdgeJobDefinition.zip?sv=2018-03-28&sr=b&sig=nehN80qyE4x8vQeDJUPi6JoxN1XyG2pB67HL8cnghQY%3D&st=2021-02-03T20%3A15%3A57Z&se=2024-02-03T20%3A25%3A57Z&sp=r",
+          "ASAJobResourceId": "/subscriptions/f0cf2edb-86a7-44b6-9c02-9c5fee5c618d/resourceGroups/EdgeASATest/providers/Microsoft.StreamAnalytics/streamingjobs/EdegASA",
+          "ASAJobEtag": "41cae54b-73ab-4f23-bf82-13a6da903e57",
+          "PublishTimestamp": "2/3/2021 8:25:57 PM"
+        }
+      }
+    }
+  }
+}

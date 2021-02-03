@@ -1,0 +1,7 @@
+SELECT
+	*
+INTO
+	output1
+FROM
+	input1
+WHERE input1.machine.temperature < 102.3

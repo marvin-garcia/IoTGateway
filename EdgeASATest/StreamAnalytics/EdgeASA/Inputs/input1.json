@@ -1,0 +1,11 @@
+{
+  "Name": "input1",
+  "Type": "Data Stream",
+  "DataSourceType": "GatewayMessageBus",
+  "Serialization": {
+    "Type": "Json",
+    "Encoding": "UTF8"
+  },
+  "ScriptType": "Input",
+  "PartitionKey": null
+}

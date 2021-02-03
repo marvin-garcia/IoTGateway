@@ -1,0 +1,91 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ASAApiVersion": {
+      "value": "2017-04-01-preview"
+    },
+    "StreamAnalyticsJobName": {
+      "value": "EdegASA"
+    },
+    "Location": {
+      "value": "East US"
+    },
+    "OutputStartMode": {
+      "value": "JobStartTime"
+    },
+    "OutputStartTime": {
+      "value": "2019-01-01T00:00:00Z"
+    },
+    "DataLocale": {
+      "value": "en-US"
+    },
+    "OutputErrorPolicy": {
+      "value": "Stop"
+    },
+    "EventsLateArrivalMaxDelayInSeconds": {
+      "value": 5
+    },
+    "EventsOutOfOrderMaxDelayInSeconds": {
+      "value": 0
+    },
+    "EventsOutOfOrderPolicy": {
+      "value": "Adjust"
+    },
+    "StreamingUnits": {
+      "value": 3
+    },
+    "CompatibilityLevel": {
+      "value": "1.2"
+    },
+    "ContentStoragePolicy": {
+      "value": "SystemAccount"
+    },
+    "Query": {
+      "value": "SELECT *\nINTO output1\nFROM input1\nWHERE input1.machine.temperature < 102.3"
+    },
+    "Inputs": {
+      "value": [
+        {
+          "name": "input1",
+          "properties": {
+            "type": "Stream",
+            "compression": {
+              "type": "None"
+            },
+            "datasource": {
+              "type": "GatewayMessageBus",
+              "properties": {}
+            },
+            "serialization": {
+              "type": "Json",
+              "properties": {
+                "encoding": "UTF8"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Outputs": {
+      "value": [
+        {
+          "name": "output1",
+          "properties": {
+            "datasource": {
+              "type": "GatewayMessageBus",
+              "properties": {}
+            },
+            "serialization": {
+              "type": "Json",
+              "properties": {
+                "encoding": "UTF8",
+                "format": "Array"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

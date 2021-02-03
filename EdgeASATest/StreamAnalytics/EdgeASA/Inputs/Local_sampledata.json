@@ -1,0 +1,7 @@
+{
+    "InputAlias": "sampledata",
+    "Type": "Data Stream",
+    "Format": "Json",
+    "FilePath": "/mnt/c/Users/magar/source/repos/IoTGateway/EdgeASATest/StreamAnalytics/EdgeASA/sampledata.json",
+    "ScriptType": "InputMock"
+}

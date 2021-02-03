@@ -1,0 +1,22 @@
+{
+    "name": "EdegASA",
+    "startFile": "EdgeASA.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Inputs/input1.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Outputs/output1.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Inputs/Local_sampledata.json",
+            "subType": "InputMock"
+        }
+    ]
+}

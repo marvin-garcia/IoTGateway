@@ -1,0 +1,290 @@
+[
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.62740454479467,
+      "pressure": 10.29932456839433
+    },
+    "ambient": {
+      "temperature": 20.787711982283607,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:49:50.7854644Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.22526602713639,
+      "pressure": 10.253511319547183
+    },
+    "ambient": {
+      "temperature": 21.398803847329134,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:49:55.8076574Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.08997524487322,
+      "pressure": 10.238098445618467
+    },
+    "ambient": {
+      "temperature": 20.738842169399767,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:50:00.8303186Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 101.9798360934853,
+      "pressure": 10.225550947359086
+    },
+    "ambient": {
+      "temperature": 20.79879712094497,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:50:05.852202Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.37310003786028,
+      "pressure": 10.270353168870159
+    },
+    "ambient": {
+      "temperature": 21.454180599168957,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:50:10.8747175Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.6904518479437,
+      "pressure": 10.306507172550548
+    },
+    "ambient": {
+      "temperature": 20.59305731304598,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:50:15.8982171Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.29280760013165,
+      "pressure": 10.261205929128922
+    },
+    "ambient": {
+      "temperature": 20.591606565793793,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:50:20.920546Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.21159365992604,
+      "pressure": 10.25195370809284
+    },
+    "ambient": {
+      "temperature": 20.89365248540121,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:50:25.9426164Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.35282199147757,
+      "pressure": 10.268043011687318
+    },
+    "ambient": {
+      "temperature": 20.662402944714948,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:50:30.9611068Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 101.99957363191044,
+      "pressure": 10.227799527685999
+    },
+    "ambient": {
+      "temperature": 20.51162058581208,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:50:35.9836896Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 101.78369175446394,
+      "pressure": 10.203205389749057
+    },
+    "ambient": {
+      "temperature": 20.971723240554205,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:50:41.005612Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.03365603160752,
+      "pressure": 10.231682332714781
+    },
+    "ambient": {
+      "temperature": 21.008862333143533,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:50:46.0280848Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.14681344113633,
+      "pressure": 10.24457368316743
+    },
+    "ambient": {
+      "temperature": 21.27975014214392,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:50:51.0505862Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 101.7525065607636,
+      "pressure": 10.199652646162942
+    },
+    "ambient": {
+      "temperature": 20.76894580818198,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:50:56.0727346Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 101.8775292224612,
+      "pressure": 10.21389573420444
+    },
+    "ambient": {
+      "temperature": 21.10475693950651,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:51:01.09534Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.18031326852757,
+      "pressure": 10.248390119199343
+    },
+    "ambient": {
+      "temperature": 21.172312656730558,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:51:06.1176656Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.35164378320412,
+      "pressure": 10.267908785428318
+    },
+    "ambient": {
+      "temperature": 20.916115424789542,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:51:11.1397144Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.720898636254,
+      "pressure": 10.30997579400362
+    },
+    "ambient": {
+      "temperature": 20.839301098761755,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:51:16.1617693Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.36409645451427,
+      "pressure": 10.26932744418517
+    },
+    "ambient": {
+      "temperature": 20.5996804717461,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:51:21.1858813Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.02131477674534,
+      "pressure": 10.230276366970989
+    },
+    "ambient": {
+      "temperature": 20.956633150790182,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:51:26.2087675Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.03242318100878,
+      "pressure": 10.231541881380746
+    },
+    "ambient": {
+      "temperature": 20.717957577303963,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:51:31.2312509Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.52214845038122,
+      "pressure": 10.28733336776495
+    },
+    "ambient": {
+      "temperature": 20.60574272605858,
+      "humidity": 26
+    },
+    "timeCreated": "2021-02-03T19:51:36.2539707Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.87436192150899,
+      "pressure": 10.327458953083303
+    },
+    "ambient": {
+      "temperature": 20.643299667231414,
+      "humidity": 25
+    },
+    "timeCreated": "2021-02-03T19:51:41.2764673Z"
+  },
+  {
+    "origin": "asademoedge",
+    "machine": {
+      "temperature": 102.50508595397936,
+      "pressure": 10.28538953906094
+    },
+    "ambient": {
+      "temperature": 20.704194400554613,
+      "humidity": 24
+    },
+    "timeCreated": "2021-02-03T19:51:46.3028353Z"
+  }
+]
