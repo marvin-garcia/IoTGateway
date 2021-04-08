@@ -572,6 +572,7 @@
     "simVmDnsName": "[concat(parameters('simVmName'), '-', parameters('environmentHashId'))]",
     "edgeVmDnsName": "[concat(parameters('edgeVmName'), '-', parameters('environmentHashId'))]",
     "iotHubName": "[concat('iothub-', parameters('environmentHashId'))]",
+    "iotHubApiVersion": "[providers('Microsoft.Devices', 'IoTHubs').apiVersions[0]]",
     "dpsResourceId": "[resourceId('Microsoft.Devices/provisioningServices', variables('dpsName'))]",
     "dpsName": "[concat('dps-', parameters('environmentHashId'))]",
     "dpsGlobalDomain": "[if(startsWith(resourceGroup().location, 'usgov'), 'azure-devices-provisioning.us', if(startsWith(resourceGroup().location, 'usdod'), 'azure-devices-provisioning.us', 'azure-devices-provisioning.net'))]",
@@ -602,6 +603,7 @@
     "eventHubSendRuleId": "[resourceId('Microsoft.EventHub/namespaces/AuthorizationRules', variables('eventHubNamespaceName'), variables('eventHubSendPolicyName'))]",
     "eventHubTelemetryName": "telemetry",
     "eventHubNotificationsName": "notifications",
+    "eventHubAuthRulesApiVersion": "[providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]]",
     "eventHubAlertsName": "alerts",
     "tsiConsumerGroupName": "timeseriesinsights",
     "logicAppConsumerGroupName": "logicapp",
@@ -614,11 +616,13 @@
     "eventGridAlertsTopicName": "[concat('eg-alerts-', parameters('environmentHashId'))]",
     "eventGridAlertsSubscriptionName": "alerts",
     "eventGridAlertsTopicId": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridAlertsTopicName'))]",
+    "eventGridTopicApiVersion": "[providers('Microsoft.EventGrid', 'topics').apiVersions[0]]",
     "notificationsLogicAppName": "NotificationsApp",
     "alertsLogicAppName": "AlertsApp",
     "edgeASAStorageAccountName": "[concat('asaedgestrg', parameters('environmentHashId'))]",
     "edgeASAStorageContainerName": "asaedge",
-    "cloudASAJobName": "[concat('asa-cloud-', parameters('environmentHashId'))]"
+    "cloudASAJobName": "[concat('asa-cloud-', parameters('environmentHashId'))]",
+    "storageAccountApiVersion": "[providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]]"
   },
   "resources": [
     {
@@ -1100,7 +1104,7 @@
             "storageContainers": [
               {
                 "name": "[variables('iotHubStorageEndpointName')]",
-                "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), variables('storageAccountApiVersion')).keys[0].value)]",
                 "subscriptionId": "[subscription().subscriptionId]",
                 "resourceGroup": "[resourceGroup().name]",
                 "containerName": "[variables('datalakeContainerName')]",
@@ -1144,7 +1148,7 @@
         "storageEndpoints": {
           "$default": {
             "sasTtlAsIso8601": "PT1H",
-            "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+            "connectionString": "[concat('DefaultEndpointsProtocol=https;EndpointSuffix=', environment().suffixes.storage, ';AccountName=', variables('datalakeName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('datalakeName')), variables('storageAccountApiVersion')).keys[0].value)]",
             "containerName": "[variables('datalakeContainerName')]"
           }
         },
@@ -1193,7 +1197,7 @@
       "properties": {
         "iotHubs": [
           {
-            "connectionString": "[concat('HostName=', reference(resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))).hostName, ';SharedAccessKeyName=iothubowner', ';SharedAccessKey=', listKeys(resourceId('Microsoft.Devices/IotHubs', variables('iotHubName')), providers('Microsoft.Devices', 'IoTHubs').apiVersions[0]).value[0].primaryKey)]",
+            "connectionString": "[concat('HostName=', reference(resourceId('Microsoft.Devices/Iothubs', variables('iotHubName'))).hostName, ';SharedAccessKeyName=iothubowner', ';SharedAccessKey=', listKeys(resourceId('Microsoft.Devices/IotHubs', variables('iotHubName')), variables('iotHubApiVersion')).value[0].primaryKey)]",
             "location": "[parameters('dpsLocation')]",
             "name": "[concat(variables('iotHubName'), variables('iotHubDomain'))]"
           }
@@ -1349,101 +1353,6 @@
       ],
       "properties": {}
     },
-    // {
-    //   "comments": "Time Series Insights storage account",
-    //   "condition": "[parameters('deployTsiEnvironment')]",
-    //   "apiVersion": "2018-02-01",
-    //   "type": "Microsoft.Storage/storageAccounts",
-    //   "name": "[variables('tsiStorageAccountName')]",
-    //   "kind": "[parameters('tsiStorageAccountKind')]",
-    //   "location": "[parameters('location')]",
-    //   "sku": {
-    //     "name": "[parameters('tsiStorageAccountType')]"
-    //   },
-    //   "properties": {
-    //     "isHnsEnabled": "[parameters('tsiStorageisHnsEnabled')]"
-    //   }
-    // },
-    // {
-    //   "comments": "Time Series Insights environment",
-    //   "condition": "[parameters('deployTsiEnvironment')]",
-    //   "apiVersion": "2020-05-15",
-    //   "type": "Microsoft.TimeSeriesInsights/environments",
-    //   "name": "[parameters('tsiEnvironmentName')]",
-    //   "kind": "[parameters('tsiEnvironmentKind')]",
-    //   "location": "[parameters('location')]",
-    //   "sku": {
-    //     "name": "[parameters('tsiEnvironmentSku')]",
-    //     "capacity": "[parameters('tsiEnvironmentSkuCapacity')]"
-    //   },
-    //   "properties": {
-    //     "storageConfiguration": {
-    //       "accountName": "[variables('tsiStorageAccountName')]",
-    //       "managementKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('tsiStorageAccountName')), '2018-02-01').keys[0].value]"
-    //     },
-    //     "timeSeriesIdProperties": "[parameters('tsiEnvironmentTimeSeriesIdProperties')]",
-    //     "warmStoreConfiguration": {
-    //       "dataRetention": "[parameters('tsiWarmStoreDataRetention')]"
-    //     }
-    //   },
-    //   "resources": [
-    //     {
-    //       "apiVersion": "2020-05-15",
-    //       "type": "Microsoft.TimeSeriesInsights/environments/accesspolicies",
-    //       "name": "[concat(parameters('tsiEnvironmentName'), '/', 'ownerAccessPolicyName')]",
-    //       "condition": "[not(empty(parameters('tsiAccessPolicyObjectId')))]",
-    //       "properties": {
-    //         "principalObjectId": "[parameters('tsiAccessPolicyObjectId')]",
-    //         "roles": "[parameters('tsiAccessPolicyRoles')]"
-    //       },
-    //       "dependsOn": [
-    //         "[concat('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
-    //       ]
-    //     },
-    //     {
-    //       "apiVersion": "2020-05-15",
-    //       "type": "eventsources",
-    //       "kind": "Microsoft.EventHub",
-    //       "name": "[variables('tsiTelemetrySourceName')]",
-    //       "location": "[parameters('location')]",
-    //       "dependsOn": [
-    //         "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
-    //       ],
-    //       "properties": {
-    //         "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]",
-    //         "serviceBusNamespace": "[variables('eventHubNamespaceName')]",
-    //         "eventHubName": "[variables('eventHubTelemetryName')]",
-    //         "keyName": "[variables('eventHubListenPolicyName')]",
-    //         "consumerGroupName": "[variables('tsiConsumerGroupName')]",
-    //         "sharedAccessKey": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]",
-    //         "timestampPropertyName": "[parameters('tsiTimestampPropertyName')]"
-    //       }
-    //     },
-    //     {
-    //       "apiVersion": "2020-05-15",
-    //       "type": "eventsources",
-    //       "kind": "Microsoft.EventHub",
-    //       "name": "[variables('tsiAlertsSourceName')]",
-    //       "location": "[parameters('location')]",
-    //       "dependsOn": [
-    //         "[resourceId('Microsoft.TimeSeriesInsights/environments/', parameters('tsiEnvironmentName'))]"
-    //       ],
-    //       "properties": {
-    //         "eventSourceResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubAlertsName'))]",
-    //         "serviceBusNamespace": "[variables('eventHubNamespaceName')]",
-    //         "eventHubName": "[variables('eventHubAlertsName')]",
-    //         "keyName": "[variables('eventHubListenPolicyName')]",
-    //         "consumerGroupName": "[variables('tsiConsumerGroupName')]",
-    //         "sharedAccessKey": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]",
-    //         "timestampPropertyName": "[parameters('tsiTimestampPropertyName')]"
-    //       }
-    //     }
-    //   ],
-    //   "dependsOn": [
-    //     "[concat('Microsoft.Storage/storageAccounts/', variables('tsiStorageAccountName'))]",
-    //     "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHubNamespaceName'), variables('eventHubTelemetryName'))]"
-    //   ]
-    // },
     {
       "comments": "Deploy Time Series Insights.",
       "condition": "[parameters('deployTsiEnvironment')]",
@@ -1514,7 +1423,7 @@
             "value": "[variables('eventHubListenPolicyName')]"
           },
           "eventSource1AccessKey": {
-            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+            "value": "[listKeys(variables('eventHubListenRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
           },
           "eventSource1ConsumerGroup": {
             "value": "[variables('tsiConsumerGroupName')]"
@@ -1538,7 +1447,7 @@
             "value": "[variables('eventHubListenPolicyName')]"
           },
           "eventSource2AccessKey": {
-            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+            "value": "[listKeys(variables('eventHubListenRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
           },
           "eventSource2ConsumerGroup": {
             "value": "[variables('tsiConsumerGroupName')]"
@@ -1711,13 +1620,13 @@
             "value": "[variables('logicAppConsumerGroupName')]"
           },
           "eventhubs_1_connectionString": {
-            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryConnectionString]"
+            "value": "[listKeys(variables('eventHubListenRuleId'), variables('eventHubAuthRulesApiVersion')).primaryConnectionString]"
           },
           "azureeventgridpublish_1_endpoint": {
-            "value": "[reference(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+            "value": "[reference(variables('eventGridNotificationsTopicId'), variables('eventGridTopicApiVersion')).endpoint]"
           },
           "azureeventgridpublish_1_api_key": {
-            "value": "[listKeys(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).key1]"
+            "value": "[listKeys(variables('eventGridNotificationsTopicId'), variables('eventGridTopicApiVersion')).key1]"
           }
         },
         "templateLink": {
@@ -1744,13 +1653,13 @@
             "value": "[variables('logicAppConsumerGroupName')]"
           },
           "eventhubs_1_connectionString": {
-            "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryConnectionString]"
+            "value": "[listKeys(variables('eventHubListenRuleId'), variables('eventHubAuthRulesApiVersion')).primaryConnectionString]"
           },
           "azureeventgridpublish_1_endpoint": {
-            "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+            "value": "[reference(variables('eventGridAlertsTopicId'), variables('eventGridTopicApiVersion')).endpoint]"
           },
           "azureeventgridpublish_1_api_key": {
-            "value": "[listKeys(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).key1]"
+            "value": "[listKeys(variables('eventGridAlertsTopicId'), variables('eventGridTopicApiVersion')).key1]"
           }
         },
         "templateLink": {
@@ -1853,7 +1762,7 @@
             "value": "[variables('iotHubServicePolicyName')]"
           },
           "Input_iothub_sharedAccessPolicyKey": {
-            "value": "[listKeys(variables('iotHubResourceId'), providers('Microsoft.Devices', 'Iothubs').apiVersions[0]).value[1].primaryKey]"
+            "value": "[listKeys(variables('iotHubResourceId'), variables('iotHubApiVersion')).value[1].primaryKey]"
           },
           "Output_notificationshub_serviceBusNamespace": {
             "value": "[variables('eventHubNamespaceName')]"
@@ -1868,7 +1777,7 @@
             "value": "[variables('eventHubSendPolicyName')]"
           },
           "Output_notificationshub_sharedAccessPolicyKey": {
-            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+            "value": "[listKeys(variables('eventHubSendRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
           },
           "Output_alertshub_serviceBusNamespace": {
             "value": "[variables('eventHubNamespaceName')]"
@@ -1883,7 +1792,7 @@
             "value": "[variables('eventHubSendPolicyName')]"
           },
           "Output_alertshub_sharedAccessPolicyKey": {
-            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+            "value": "[listKeys(variables('eventHubSendRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
           },
           "Output_telemetryhub_serviceBusNamespace": {
             "value": "[variables('eventHubNamespaceName')]"
@@ -1898,7 +1807,7 @@
             "value": "[variables('eventHubSendPolicyName')]"
           },
           "Output_telemetryhub_sharedAccessPolicyKey": {
-            "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+            "value": "[listKeys(variables('eventHubSendRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
           }
         },
         "templateLink": {
@@ -1924,19 +1833,19 @@
     },
     "eventHubSendKey": {
       "type": "string",
-      "value": "[listKeys(variables('eventHubSendRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+      "value": "[listKeys(variables('eventHubSendRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
     },
     "eventHubListenKey": {
       "type": "string",
-      "value": "[listKeys(variables('eventHubListenRuleId'), providers('Microsoft.EventHub', 'namespaces/authorizationRules').apiVersions[0]).primaryKey]"
+      "value": "[listKeys(variables('eventHubListenRuleId'), variables('eventHubAuthRulesApiVersion')).primaryKey]"
     },
     "eventGridNotificationsEndpoint": {
       "type": "string",
-      "value": "[reference(variables('eventGridNotificationsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+      "value": "[reference(variables('eventGridNotificationsTopicId'), variables('eventGridTopicApiVersion')).endpoint]"
     },
     "eventGridAlertsEndpoint": {
       "type": "string",
-      "value": "[reference(variables('eventGridAlertsTopicId'), providers('Microsoft.EventGrid', 'topics').apiVersions[0]).endpoint]"
+      "value": "[reference(variables('eventGridAlertsTopicId'), variables('eventGridTopicApiVersion')).endpoint]"
     },
     "tsiDataAccessFQDN": {
       "condition": "[parameters('deployTsiEnvironment')]",
