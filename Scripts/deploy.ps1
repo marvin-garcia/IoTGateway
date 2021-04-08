@@ -72,6 +72,8 @@ function New-IIoTEnvironment()
     }
     #endregion
 
+    $root_path = Split-Path $PSScriptRoot -Parent
+
     $env_hash = Get-EnvironmentHash
     $iot_hub_name = "iothub-$($env_hash)"
     $deployment_condition = "tags.__type__='iiotedge'"
@@ -164,13 +166,13 @@ function New-IIoTEnvironment()
 
     # edge stream analytics job
     $edge_asa_name = "asa-edge-$($env_hash)"
-    $edge_asa_query = Get-Content -Path ./StreamAnalytics/EdgeASA/EdgeASA.asaql -Raw
+    $edge_asa_query = Get-Content -Path "$($root_path)/StreamAnalytics/EdgeASA/EdgeASA.asaql" -Raw
     $edge_asa_input_name = "streaminput"
     $edge_asa_telemetry_output_name = "telemetryoutput"
     $edge_asa_alerts_output_name = "alertsoutput"
 
     # cloud stream analytics job
-    $cloud_asa_query = Get-Content -Path ./StreamAnalytics/CloudASA/CloudASA.asaql -Raw
+    $cloud_asa_query = Get-Content -Path "$($root_path)/StreamAnalytics/CloudASA/CloudASA.asaql" -Raw
 
     # data explorer
     $adx_cluster_name = "adx$($env_hash)"
@@ -229,15 +231,17 @@ function New-IIoTEnvironment()
         "edgeASAJobOutput2Name" = @{ "value" = $edge_asa_alerts_output_name }
         "cloudASAJobQuery" = @{ "value" = ($cloud_asa_query | Out-String) }
     }
-    Set-Content -Path ./Templates/azuredeploy.parameters.json -Value (ConvertTo-Json $platform_parameters -Depth 5)
+    Set-Content -Path "$($root_path)/Templates/azuredeploy.parameters.json" -Value (ConvertTo-Json $platform_parameters -Depth 5)
 
+    Write-Host
     Write-Host "Creating resource group deployment"
+    Write-Host -ForegroundColor Yellow "IMPORTANT: In a few minutes, the notification webhook you provided will receive two validation requests. You must copy their validation URLs and open them on a browser for the deployment to be successful."
     $deployment_output = az deployment group create `
         --resource-group $resource_group `
         --name 'IndustrialIoT' `
         --mode Incremental `
-        --template-file ./Templates/azuredeploy.json `
-        --parameters ./Templates/azuredeploy.parameters.json | ConvertFrom-Json
+        --template-file "$($root_path)/Templates/azuredeploy.json" `
+        --parameters "$($root_path)/Templates/azuredeploy.parameters.json" | ConvertFrom-Json
     
     if (!$deployment_output)
     {
@@ -271,7 +275,7 @@ function New-IIoTEnvironment()
     az iot edge deployment create `
         -d "main-deployment" `
         --hub-name $iot_hub_name `
-        --content ./EdgeSolution/deployment.template.json `
+        --content "$($root_path)/EdgeSolution/deployment.template.json" `
         --target-condition=$deployment_condition
 
     # Create OPC layered deployment
@@ -292,9 +296,9 @@ function New-IIoTEnvironment()
         Add-TimeSeriesInsightsModel `
             -resource_group $resource_group `
             -tsi_name $tsi_name `
-            -tsi_types (Get-Content -Path ./TimeSeriesInsights/Model/types.json) `
-            -tsi_hierarchies (Get-Content -Path ./TimeSeriesInsights/Model/hierarchies.json) `
-            -tsi_instances (Get-Content -Path ./TimeSeriesInsights/Model/instances.json)
+            -tsi_types (Get-Content -Path "$($root_path)/TimeSeriesInsights/Model/types.json") `
+            -tsi_hierarchies (Get-Content -Path "$($root_path)/TimeSeriesInsights/Model/hierarchies.json") `
+            -tsi_instances (Get-Content -Path "$($root_path)/TimeSeriesInsights/Model/instances.json")
     }
     #endregion
 
@@ -417,7 +421,8 @@ function Add-TimeSeriesInsightsModel(
     #region types
     Write-Host "`r`nCreating Time Series Insights types"
     
-    $tsi_fqdn = az timeseriesinsights environment show -g $resource_group -n $tsi_name --query dataAccessFqdn -o tsv
+    $tsi_id = "/subscriptions/$($subscription_id)/resourceGroups/$($resource_group)/providers/Microsoft.TimeSeriesInsights/environments/$($tsi_name)"
+    $tsi_fqdn = az resource show --id $tsi_id --query 'properties.dataAccessFqdn' -o tsv
     $types_uri = "https://$($tsi_fqdn)/timeseries/types/`$batch?api-version=2020-07-31"
     
     Invoke-RestMethod $types_uri `
