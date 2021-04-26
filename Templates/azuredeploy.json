@@ -848,20 +848,20 @@
       "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
-          {
-            "name": "ssh_rule",
-            "properties": {
-              "description": "Locks inbound down to ssh default port 22.",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "22",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 100,
-              "direction": "Inbound"
-            }
-          }
+          // {
+          //   "name": "ssh_rule",
+          //   "properties": {
+          //     "description": "Locks inbound down to ssh default port 22.",
+          //     "protocol": "Tcp",
+          //     "sourcePortRange": "*",
+          //     "destinationPortRange": "22",
+          //     "sourceAddressPrefix": "*",
+          //     "destinationAddressPrefix": "*",
+          //     "access": "Allow",
+          //     "priority": 100,
+          //     "direction": "Inbound"
+          //   }
+          // }
         ]
       }
     },
