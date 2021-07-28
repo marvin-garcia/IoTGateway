@@ -9,7 +9,7 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-                "image": "mcr.microsoft.com/iotedge/opc-publisher:latest",
+                "image": "mcr.microsoft.com/iotedge/opc-publisher:2.5",
                 "createOptions": "{\"Hostname\":\"opcPublisher\",\"Cmd\":[\"publisher\",\"--aa\",\"--pf=/appdata/publishednodes.json\"],\"HostConfig\":{\"PortBindings\":{\"9080/tcp\":[{\"HostPort\":\"9080\"}]},\"Binds\":[\"/appdata:/appdata\"]}}"
             }
           },
